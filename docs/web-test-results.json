@@ -1,0 +1,7 @@
+{
+  "tests": 6,
+  "failures": 0,
+  "errors": 0,
+  "seconds": 7.381,
+  "scope": "Public gateway, assets, access control, complete booking over HTTP"
+}

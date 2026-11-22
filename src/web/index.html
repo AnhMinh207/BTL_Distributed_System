@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0d7356"><title>GoRide — Chuyến đi của bạn</title>
+  <meta name="description" content="Đặt xe, nhận chuyến và theo dõi hành trình. Bản mô phỏng DS03.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a href="#ride" class="brand" aria-label="GoRide trang chủ"><img src="/favicon.svg" alt="" width="38" height="38"><span>go<span class="brand-light">ride</span><small>ĐI CÙNG BẠN</small></span></a>
+    <div class="workspace-label">KHÔNG GIAN CỦA BẠN</div>
+    <nav aria-label="Điều hướng chính">
+      <button class="nav-item active" data-view="ride"><span data-icon="car"></span><span>Chuyến đi</span><span class="nav-arrow">↗</span></button>
+      <button class="nav-item" data-view="history"><span data-icon="clock"></span><span>Lịch sử chuyến</span></button>
+      <button class="nav-item" data-view="payments"><span data-icon="wallet"></span><span>Thanh toán</span></button>
+      <button class="nav-item" data-view="notifications"><span data-icon="bell"></span><span>Thông báo</span><span class="count" id="notice-count">0</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="green-note"><span class="spark">✳</span><strong>Một hành trình nhỏ.<br>Một ngày tốt hơn.</strong><p>Chọn điểm đến.<br>Để chúng tôi kết nối.</p><span class="note-road"></span></div>
+      <button class="nav-item" data-view="system"><span data-icon="layers"></span><span>Trạng thái hệ thống</span><i class="status-dot" id="sidebar-health"></i></button>
+      <div class="sidebar-footer">DS03 <span>•</span> Mô phỏng học phần</div>
+    </div>
+  </aside>
+
+  <div class="main-shell">
+    <header class="topbar">
+      <div class="breadcrumb">GoRide <span>/</span> <strong id="breadcrumb-title">Chuyến đi</strong></div>
+      <div class="topbar-actions"><span class="city-label"><span data-icon="pin"></span>TP. Hồ Chí Minh</span><button class="icon-button" data-view="notifications" aria-label="Mở thông báo"><span data-icon="bell"></span><i id="bell-dot" hidden></i></button><div class="account-pill" id="account-pill"><span class="avatar">G</span><div><strong>Chào bạn!</strong><small>Chưa đăng nhập</small></div></div><button class="text-button" id="logout" hidden>Đăng xuất</button></div>
+    </header>
+    <main>
+      <section class="page-heading"><div><div class="eyebrow">CHUYỂN ĐỘNG THEO CÁCH CỦA BẠN</div><h1 id="page-title">Đi đâu hôm nay?</h1><p id="page-subtitle">Một chuyến đi thoải mái bắt đầu từ đây.</p></div><div class="heading-actions"><span class="live-label"><i class="status-dot"></i><span id="connection-label">Đang kết nối</span></span><button class="button secondary small" id="demo-setup"><span data-icon="spark"></span>Chuẩn bị demo</button></div></section>
+
+      <section id="auth-panel" class="auth-panel">
+        <div class="auth-intro"><span class="mini-tag">CHÀO MỪNG ĐẾN GORIDE</span><h2>Sẵn sàng cho<br>chuyến đi tiếp theo?</h2><p>Đăng nhập để đặt xe hoặc nhận chuyến với vai trò tài xế.</p><div class="auth-benefits"><span>✓ Kết nối tài xế gần bạn</span><span>✓ Theo dõi từng chặng</span><span>✓ Thanh toán mô phỏng</span></div></div>
+        <form id="auth-form" class="auth-form"><div class="segmented auth-tabs"><button type="button" class="selected" data-auth="login">Đăng nhập</button><button type="button" data-auth="register">Tạo tài khoản</button></div><label>Tên đăng nhập<input id="username" name="username" autocomplete="username" minlength="3" maxlength="64" pattern="[a-zA-Z0-9_.\-]+" placeholder="Ví dụ: hanhkhach01" required></label><label>Mật khẩu<div class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" placeholder="Tối thiểu 10 ký tự" required><button type="button" id="toggle-password" aria-label="Hiện mật khẩu"><span data-icon="eye"></span></button></div></label><label id="register-role" hidden>Bạn muốn tham gia với vai trò<select id="auth-role"><option value="passenger">Hành khách</option><option value="driver">Tài xế</option></select></label><p class="form-error" id="auth-error" role="alert" hidden></p><button class="button primary" type="submit" id="auth-submit">Đăng nhập <span>→</span></button><p class="auth-help">Muốn khám phá nhanh? Chọn <strong>Chuẩn bị demo</strong> ở phía trên để tạo hai tài khoản thử.</p></form>
+      </section>
+
+      <section id="signed-in-bar" class="signed-in-bar" hidden><div class="role-switch" id="role-switch"></div><span class="session-note">Phiên đăng nhập chỉ lưu trong tab này.</span></section>
+
+      <section id="view-ride" class="view">
+        <div class="ride-layout">
+          <div class="booking-column">
+            <section class="card booking-card" id="passenger-card"><div class="card-heading"><h2>Đặt chuyến xe</h2><span class="soft-icon" data-icon="arrow-up-right"></span></div><p class="muted">Bạn chọn điểm đến, chúng tôi kết nối.</p>
+              <form id="booking-form"><div class="location-field"><span class="location-dot pickup-dot"></span><label>ĐIỂM ĐÓN<select id="pickup-place" aria-label="Địa điểm đón"></select></label><div class="coords"><label>Vĩ độ<input id="pickup-lat" type="number" min="-90" max="90" step="any" value="10.7769" required aria-label="Vĩ độ điểm đón"></label><label>Kinh độ<input id="pickup-lon" type="number" min="-180" max="180" step="any" value="106.7009" required aria-label="Kinh độ điểm đón"></label></div><button type="button" class="map-select" data-map-target="pickup">Chọn trên sơ đồ ↗</button></div>
+              <div class="location-field destination-field"><span class="location-dot destination-dot"></span><label>ĐIỂM ĐẾN<select id="destination-place" aria-label="Địa điểm đến"></select></label><div class="coords"><label>Vĩ độ<input id="destination-lat" type="number" min="-90" max="90" step="any" value="10.7900" required aria-label="Vĩ độ điểm đến"></label><label>Kinh độ<input id="destination-lon" type="number" min="-180" max="180" step="any" value="106.7200" required aria-label="Kinh độ điểm đến"></label></div><button type="button" class="map-select" data-map-target="destination">Chọn trên sơ đồ ↗</button></div>
+              <div class="vehicle-option"><div class="car-art" data-icon="car"></div><div><strong>GoCar</strong><small>4 chỗ · Chuyến đi riêng tư</small></div><span class="check-circle">✓</span></div>
+              <label class="payment-label"><span data-icon="wallet"></span><select id="payment-mode" aria-label="Kịch bản thanh toán"><option value="success">Ví mô phỏng · Thành công</option><option value="decline">Ví mô phỏng · Bị từ chối</option></select></label>
+              <div class="fare-row"><span>Giá cước ước tính<small id="distance-label">— km · Khoảng cách mô phỏng</small></span><strong id="fare-label">—</strong></div><button class="button primary book-button" id="book-button" type="submit"><span data-icon="car"></span><span>Đặt xe ngay</span><span>→</span></button><p class="fine-print">Không thu tiền thật. Giá cuối cùng do dịch vụ chuyến đi tính.</p></form>
+            </section>
+            <section class="card driver-card" id="driver-card" hidden><div class="card-heading"><h2>Không gian tài xế</h2><span data-icon="car"></span></div><p class="muted">Cập nhật vị trí để nhận chuyến gần bạn.</p><div class="driver-status-banner"><i class="status-dot" id="driver-dot"></i><strong id="driver-status-label">Chưa sẵn sàng</strong><small id="driver-updated"></small></div><form id="driver-form"><div class="coords"><label>Vĩ độ<input id="driver-lat" type="number" min="-90" max="90" step="any" value="10.7769" required></label><label>Kinh độ<input id="driver-lon" type="number" min="-180" max="180" step="any" value="106.7009" required></label></div><button class="text-button" type="button" id="driver-use-pickup">Dùng vị trí điểm đón hiện tại ↗</button><div class="button-row"><button type="submit" class="button primary" id="driver-online">Bắt đầu nhận chuyến</button><button type="button" class="button secondary" id="driver-offline">Nghỉ nhận chuyến</button></div></form><div class="driver-help"><span data-icon="shield"></span><p>Mỗi tài xế nhận tối đa một chuyến đang hoạt động. Vị trí được cập nhật định kỳ khi bạn đang mở trang.</p></div></section>
+            <section class="demo-mini"><span class="soft-icon" data-icon="play"></span><div><strong>Xem một chuyến đi trọn vẹn</strong><p>Từ đặt xe đến hoàn tất thanh toán.</p></div><button class="icon-button" id="demo-run" title="Chạy một chuyến mẫu" aria-label="Chạy một chuyến mẫu">↗</button></section>
+          </div>
+          <div class="journey-column"><section class="map-card"><div class="map-toolbar"><div><i class="status-dot"></i><strong>Sơ đồ hành trình</strong><span>TP. Hồ Chí Minh</span></div><button class="icon-button" id="map-reset" aria-label="Căn lại sơ đồ" title="Căn lại sơ đồ"><span data-icon="locate"></span></button></div><svg id="ride-map" viewBox="0 0 900 550" role="img" aria-label="Sơ đồ vị trí mô phỏng của điểm đón, điểm đến và tài xế"></svg><div class="map-caption"><span id="map-instruction">Sơ đồ minh họa · Tọa độ mô phỏng</span><span class="map-legend"><i></i>Điểm đón <i></i>Điểm đến</span></div></section>
+            <section class="card journey-card" aria-live="polite"><div class="card-heading"><div><span class="eyebrow">HÀNH TRÌNH CỦA BẠN</span><h2 id="journey-title">Chuyến đi mới đang chờ bạn</h2></div><span class="badge" id="trip-badge">Chưa có chuyến</span></div><div id="trip-detail"><div class="empty-journey"><span class="empty-icon" data-icon="route"></span><p>Chọn điểm đón và điểm đến để bắt đầu.<br>Trạng thái chuyến sẽ cập nhật tự động tại đây.</p></div></div></section>
+          </div>
+        </div>
+        <section id="demo-progress" class="card demo-progress" hidden aria-live="polite"><div class="card-heading"><h2>Hành trình demo trực tiếp</h2><span class="badge" id="demo-badge">Đang chuẩn bị</span></div><div id="demo-steps"></div><p class="muted" id="demo-message"></p></section>
+      </section>
+
+      <section id="view-history" class="view" hidden><div class="card"><div class="card-heading"><h2>Tất cả chuyến đi</h2><button class="button secondary small refresh-button">Làm mới</button></div><div id="history-content"></div></div></section>
+      <section id="view-payments" class="view" hidden><div class="summary-grid" id="payment-summary"></div><div class="card"><div class="card-heading"><h2>Giao dịch của bạn</h2><span class="badge">Thanh toán mô phỏng</span></div><div id="payments-content"></div></div></section>
+      <section id="view-notifications" class="view" hidden><div class="card"><div class="card-heading"><h2>Hộp thư của bạn</h2><button class="button secondary small refresh-button">Làm mới</button></div><div id="notifications-content"></div></div></section>
+      <section id="view-system" class="view" hidden><div class="section-intro"><h2>Các dịch vụ đang kết nối</h2><p>Mỗi dịch vụ nghiệp vụ chạy độc lập và sở hữu dữ liệu riêng.</p></div><div class="service-grid" id="service-grid"></div><div class="card architecture-note"><h2>Một chuyến đi, nhiều dịch vụ phối hợp</h2><p>Đặt xe → hàng đợi → ghép tài xế → nhận chuyến → hoàn tất → thanh toán → thông báo.</p><p>Giao diện web chỉ gọi API công khai. Không truy cập database và không mở các API nội bộ của broker.</p></div></section>
+      <footer class="page-footer"><span>GoRide <span class="muted">·</span> Đi cùng bạn trên mỗi hành trình.</span><span>DS03 · Dữ liệu và thanh toán mô phỏng</span></footer>
+    </main>
+  </div>
+</div>
+<div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+</body>
+</html>

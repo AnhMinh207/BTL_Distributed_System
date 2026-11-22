@@ -1,0 +1,129 @@
+{
+  "tests": 24,
+  "failures": 0,
+  "errors": 0,
+  "duration_seconds": 41.254,
+  "run_directory": "C:\\Bop\\BTL_Distributed_System\\runtime\\test-82cf6325-9c71-4d41-ab99-a8b694ef83c9",
+  "results": [
+    {
+      "test": "test_C01_two_passengers_one_driver",
+      "status": "passed",
+      "seconds": 0.993
+    },
+    {
+      "test": "test_C02_concurrent_accept_and_reject",
+      "status": "passed",
+      "seconds": 0.762
+    },
+    {
+      "test": "test_C03_concurrent_idempotent_requests",
+      "status": "passed",
+      "seconds": 0.258
+    },
+    {
+      "test": "test_F01_registration_and_login",
+      "status": "passed",
+      "seconds": 0.34
+    },
+    {
+      "test": "test_F02_driver_status_and_location",
+      "status": "passed",
+      "seconds": 0.226
+    },
+    {
+      "test": "test_F03_complete_ride_and_payment",
+      "status": "passed",
+      "seconds": 1.237
+    },
+    {
+      "test": "test_F04_reject_compensates_reservation",
+      "status": "passed",
+      "seconds": 1.122
+    },
+    {
+      "test": "test_F05_no_driver_cancels",
+      "status": "passed",
+      "seconds": 0.525
+    },
+    {
+      "test": "test_F06_notifications_for_both_roles",
+      "status": "passed",
+      "seconds": 1.536
+    },
+    {
+      "test": "test_F07_idempotency_and_conflicting_payload",
+      "status": "passed",
+      "seconds": 0.198
+    },
+    {
+      "test": "test_F08_fare_is_server_calculated",
+      "status": "passed",
+      "seconds": 0.14
+    },
+    {
+      "test": "test_F09_declined_payment_compensates",
+      "status": "passed",
+      "seconds": 1.439
+    },
+    {
+      "test": "test_F10_passenger_cancel",
+      "status": "passed",
+      "seconds": 0.816
+    },
+    {
+      "test": "test_F11_duplicate_event_published_once",
+      "status": "passed",
+      "seconds": 0.305
+    },
+    {
+      "test": "test_R01_payment_crash_and_queue_recovery",
+      "status": "passed",
+      "seconds": 1.884
+    },
+    {
+      "test": "test_R02_broker_crash_outbox_and_durable_restart",
+      "status": "passed",
+      "seconds": 2.331
+    },
+    {
+      "test": "test_R03_bounded_retry_dlq_and_redrive",
+      "status": "passed",
+      "seconds": 9.89
+    },
+    {
+      "test": "test_R04_reordered_cancel_before_reserve",
+      "status": "passed",
+      "seconds": 0.432
+    },
+    {
+      "test": "test_R05_expired_lease_and_broker_restart",
+      "status": "passed",
+      "seconds": 3.485
+    },
+    {
+      "test": "test_R06_saga_timeout_and_late_matching",
+      "status": "passed",
+      "seconds": 3.264
+    },
+    {
+      "test": "test_S01_authentication_and_resource_authorization",
+      "status": "passed",
+      "seconds": 1.564
+    },
+    {
+      "test": "test_S02_invalid_inputs_and_password",
+      "status": "passed",
+      "seconds": 0.592
+    },
+    {
+      "test": "test_S03_forged_token_and_lifecycle_order",
+      "status": "passed",
+      "seconds": 1.266
+    },
+    {
+      "test": "test_Z01_performance_concurrent_reads",
+      "status": "passed",
+      "seconds": 0.999
+    }
+  ]
+}

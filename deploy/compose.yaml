@@ -1,0 +1,107 @@
+x-common: &common
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  restart: unless-stopped
+  init: true
+  networks: [ds03]
+  environment: &env
+    AUTH_SECRET: ${AUTH_SECRET:?Run python scripts/configure.py first}
+    SERVICE_KEY: ${SERVICE_KEY:?Run python scripts/configure.py first}
+    HOST: 0.0.0.0
+    DATA_DIR: /data
+    BROKER_URL: http://broker:8100
+    IDENTITY_URL: http://identity:8101
+    DRIVER_URL: http://driver:8102
+    TRIP_URL: http://trip:8103
+    MATCHING_URL: http://matching:8104
+    PAYMENT_URL: http://payment:8105
+    NOTIFICATION_URL: http://notification:8106
+    MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
+    LEASE_SECONDS: ${LEASE_SECONDS:-3}
+    SAGA_TIMEOUT: ${SAGA_TIMEOUT:-60}
+    OFFER_TIMEOUT: ${OFFER_TIMEOUT:-120}
+    TOKEN_TTL: ${TOKEN_TTL:-3600}
+  healthcheck:
+    test: [CMD, python, -c, "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['PORT']+'/health',timeout=2)"]
+    interval: 10s
+    timeout: 3s
+    retries: 3
+    start_period: 5s
+
+services:
+  web:
+    <<: *common
+    command: [python, scripts/web.py, --host, 0.0.0.0, --port, '8080']
+    environment:
+      <<: *env
+      PORT: '8080'
+    ports: ['127.0.0.1:8080:8080']
+  broker:
+    <<: *common
+    command: [python, -m, src.main, broker]
+    environment:
+      <<: *env
+      PORT: '8100'
+    ports: ['127.0.0.1:8100:8100']
+    volumes: [broker-data:/data]
+  identity:
+    <<: *common
+    command: [python, -m, src.main, identity]
+    environment:
+      <<: *env
+      PORT: '8101'
+    ports: ['127.0.0.1:8101:8101']
+    volumes: [identity-data:/data]
+  driver:
+    <<: *common
+    command: [python, -m, src.main, driver]
+    environment:
+      <<: *env
+      PORT: '8102'
+    ports: ['127.0.0.1:8102:8102']
+    volumes: [driver-data:/data]
+  trip:
+    <<: *common
+    command: [python, -m, src.main, trip]
+    environment:
+      <<: *env
+      PORT: '8103'
+    ports: ['127.0.0.1:8103:8103']
+    volumes: [trip-data:/data]
+  matching:
+    <<: *common
+    command: [python, -m, src.main, matching]
+    environment:
+      <<: *env
+      PORT: '8104'
+    ports: ['127.0.0.1:8104:8104']
+    volumes: [matching-data:/data]
+  payment:
+    <<: *common
+    command: [python, -m, src.main, payment]
+    environment:
+      <<: *env
+      PORT: '8105'
+    ports: ['127.0.0.1:8105:8105']
+    volumes: [payment-data:/data]
+  notification:
+    <<: *common
+    command: [python, -m, src.main, notification]
+    environment:
+      <<: *env
+      PORT: '8106'
+    ports: ['127.0.0.1:8106:8106']
+    volumes: [notification-data:/data]
+
+networks:
+  ds03:
+    driver: bridge
+volumes:
+  broker-data:
+  identity-data:
+  driver-data:
+  trip-data:
+  matching-data:
+  payment-data:
+  notification-data:

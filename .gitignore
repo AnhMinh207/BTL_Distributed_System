@@ -1,0 +1,8 @@
+.env
+.venv/
+.tools/
+__pycache__/
+*.pyc
+runtime/
+data/
+docs/.browser/

@@ -1,0 +1,46 @@
+{
+  "containers": [
+    {
+      "Service": "broker",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "driver",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "identity",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "matching",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "notification",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "payment",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "trip",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "web",
+      "State": "running",
+      "Health": "healthy"
+    }
+  ],
+  "browser_checks_passed": 14,
+  "scope": "8-container Compose, public web at port 8180; full browser flows on isolated stack"
+}

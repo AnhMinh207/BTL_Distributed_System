@@ -1,0 +1,44 @@
+[
+  {
+    "Service": "broker",
+    "State": "running",
+    "Health": "healthy",
+    "ID": "b6df84eb9a48"
+  },
+  {
+    "Service": "driver",
+    "State": "running",
+    "Health": "healthy",
+    "ID": "a3ca0d908376"
+  },
+  {
+    "Service": "identity",
+    "State": "running",
+    "Health": "healthy",
+    "ID": "dbb45a9a7494"
+  },
+  {
+    "Service": "matching",
+    "State": "running",
+    "Health": "healthy",
+    "ID": "94267a50b794"
+  },
+  {
+    "Service": "notification",
+    "State": "running",
+    "Health": "healthy",
+    "ID": "ab1c9ba93fb4"
+  },
+  {
+    "Service": "payment",
+    "State": "running",
+    "Health": "healthy",
+    "ID": "e8fad148659b"
+  },
+  {
+    "Service": "trip",
+    "State": "running",
+    "Health": "healthy",
+    "ID": "69363b31a9b4"
+  }
+]

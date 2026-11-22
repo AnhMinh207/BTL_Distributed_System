@@ -1,0 +1,22 @@
+{
+  "passed": 14,
+  "checks": [
+    "Guest auth and booking screen renders",
+    "Demo registers two real accounts and makes driver available",
+    "Passenger booking reaches offered through real matching",
+    "Driver accepts, starts and completes; payment settles",
+    "Passenger payment ledger and notifications display real results",
+    "Visible automatic demo finishes all seven steps",
+    "Session survives reload inside the same browser tab",
+    "Add-account form remains open while polling",
+    "Mobile 390px layout has no horizontal overflow",
+    "Manual registration, logout and login work on mobile",
+    "Passenger cancellation releases the driver",
+    "Driver rejection cancels the trip",
+    "Declined payment is visible and Saga releases the driver",
+    "No uncaught browser JavaScript errors"
+  ],
+  "errors": [],
+  "browser": "Installed Microsoft Edge; Playwright",
+  "viewport": "1440x1100 and 390x844"
+}
