@@ -14,9 +14,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from .resilience import CIRCUITS, CircuitOpen
+from .telemetry import TRACE, instance, span, submit
 
 PORTS = dict(broker=8100, identity=8101, driver=8102, trip=8103,
-             matching=8104, payment=8105, notification=8106)
+             matching=8104, payment=8105, notification=8106, pricing=8107, observability=8108)
 SUBSCRIPTIONS = {
     'trip.requested': ['matching', 'notification'],
     'driver.reserved': ['trip', 'notification'],
@@ -37,11 +39,13 @@ def uid():
 
 
 def log(node, event, correlation_id='-', **fields):
-    record = json.dumps(dict(timestamp=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-                             node=node, event=event, correlation_id=correlation_id, **fields), ensure_ascii=False)
+    data = dict(timestamp=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), time_unix=time.time(),
+                node=node, instance=instance(), event=event, correlation_id=correlation_id, **TRACE.get(), **fields)
+    record = json.dumps(data, ensure_ascii=False)
     # HTTP handlers and workers share stdout inside one service; keep each JSON line intact.
     with _LOG_LOCK:
         print(record, flush=True)
+    submit(data)
 
 
 class Problem(Exception):
@@ -87,6 +91,38 @@ def internal_headers():
 
 
 def call(url, method='GET', data=None, headers=None, timeout=2):
+    try:
+        circuit = CIRCUITS.before(url)
+    except CircuitOpen:
+        raise Problem(503, 'Dependency circuit open; retry after cooldown')
+    context = TRACE.get()
+    child = span(context.get('trace_id', (headers or {}).get('X-Correlation-ID', uid())), context.get('span_id'))
+    token = TRACE.set(child)
+    started = time.monotonic()
+    outcome = 200
+    failed = False
+    try:
+        return _request(url, method, data, {**(headers or {}), 'X-Correlation-ID':child['trace_id'],
+                                          'X-Parent-Span-ID':child['span_id']}, timeout)
+    except Problem as e:
+        outcome, failed = e.status, e.status >= 500
+        raise
+    finally:
+        CIRCUITS.after(circuit, failed)
+        # Skip idle polling/ACK spans to keep useful traces readable.
+        if os.getenv('SERVICE_NAME') and not any(url.endswith(s) for s in ('/claim','/ack','/health')):
+            log(os.getenv('SERVICE_NAME','web'), 'span.client', child['trace_id'], operation=method+' '+urlsplit_path(url),
+                result=outcome, duration_ms=round((time.monotonic()-started)*1000,2))
+        TRACE.reset(token)
+
+
+def urlsplit_path(url):
+    from urllib.parse import urlsplit
+    parsed = urlsplit(url)
+    return parsed.netloc + parsed.path
+
+
+def _request(url, method='GET', data=None, headers=None, timeout=2):
     body = None if data is None else json.dumps(data, allow_nan=False).encode()
     request = Request(url, data=body, method=method,
                       headers={'Content-Type': 'application/json', **(headers or {})})
@@ -131,7 +167,8 @@ def internal(headers):
 
 class Database:
     def __init__(self, name):
-        root = Path(os.getenv('DATA_DIR', 'runtime')) / name
+        namespace = name + '-' + instance() if name == 'matching' and os.getenv('MATCHING_REPLICA_DATA') == '1' else name
+        root = Path(os.getenv('DATA_DIR', 'runtime')) / namespace
         root.mkdir(parents=True, exist_ok=True)
         self.path = root / 'state.db'
         with self.connect() as db:
@@ -174,7 +211,7 @@ class Service:
 
     def emit(self, db, topic, payload, correlation_id):
         event = dict(id=uid(), topic=topic, producer=self.name, timestamp=time.time(),
-                     correlation_id=correlation_id, payload=payload)
+                     correlation_id=correlation_id, payload=payload, parent_span_id=TRACE.get().get('span_id'))
         db.execute('INSERT INTO outbox(id,envelope) VALUES(?,?)', (event['id'], json.dumps(event)))
 
     def dispatch(self, method, path, body, headers, correlation):
@@ -197,7 +234,11 @@ class Service:
                     rows = db.execute('SELECT * FROM outbox WHERE published=0 LIMIT 30').fetchall()
                 for row in rows:
                     event = json.loads(row['envelope'])
-                    call(service_url('broker') + '/events', 'POST', event, internal_headers())
+                    context = TRACE.set(span(event['correlation_id'], event.get('parent_span_id')))
+                    try:
+                        call(service_url('broker') + '/events', 'POST', event, internal_headers())
+                    finally:
+                        TRACE.reset(context)
                     with self.db.tx() as db:
                         db.execute('UPDATE outbox SET published=1 WHERE id=?', (row['id'],))
                     log(self.name, 'outbox.published', event['correlation_id'], event_id=event['id'], result='ok')
@@ -214,6 +255,8 @@ class Service:
                 if not delivery.get('event'):
                     continue
                 event = delivery['event']
+                context = TRACE.set(span(event['correlation_id'], event.get('parent_span_id')))
+                event_started = time.monotonic()
                 with self.db.connect() as db:
                     seen = db.execute('SELECT 1 FROM inbox WHERE id=?', (event['id'],)).fetchone()
                 if not seen:
@@ -228,6 +271,8 @@ class Service:
                     log(self.name, 'event.duplicate', event['correlation_id'], event_id=event['id'], result='ignored')
                 call(service_url('broker') + '/queues/' + self.name + '/ack', 'POST',
                      {'event_id': event['id'], 'receipt': delivery['receipt']}, internal_headers())
+                log(self.name,'span.consumer',event['correlation_id'],operation=event['topic'],result='ack',
+                    duration_ms=round((time.monotonic()-event_started)*1000,2))
             except Exception as e:
                 log(self.name, 'event.retry', error=str(e), result='retry')
                 if delivery and delivery.get('event'):
@@ -238,9 +283,16 @@ class Service:
                     except Problem:
                         pass
                 self.stop.wait(.3)
+            finally:
+                TRACE.set({})
 
     def run(self):
         app = self
+        def heartbeat():
+            while not app.stop.wait(10):
+                log(app.name,'service.heartbeat',result='up')
+        if self.name!='observability':
+            threading.Thread(target=heartbeat,daemon=True).start()
 
         class Handler(BaseHTTPRequestHandler):
             protocol_version = 'HTTP/1.0'
@@ -260,6 +312,10 @@ class Service:
                 if not re.fullmatch(r'[A-Za-z0-9._-]{1,128}', corr):
                     corr = uid()
                 started = time.monotonic()
+                parent = self.headers.get('X-Parent-Span-ID')
+                if parent and not re.fullmatch(r'[a-f0-9]{16}',parent):
+                    parent = None
+                context = TRACE.set(span(corr,parent))
                 status = 200
                 try:
                     length = self.headers.get('Content-Length', '0')
@@ -270,7 +326,13 @@ class Service:
                     if self.path == '/health' and self.command == 'GET':
                         with app.db.connect() as db:
                             db.execute('SELECT 1').fetchone()
-                        result = dict(service=app.name, status='up')
+                        result = dict(service=app.name, instance=instance(), status='up')
+                    elif self.path == '/internal/metrics' and self.command == 'GET':
+                        internal(self.headers)
+                        with app.db.connect() as db:
+                            result = dict(service=app.name, instance=instance(), circuits=CIRCUITS.snapshot(),
+                                outbox_pending=db.execute('SELECT COUNT(*) FROM outbox WHERE published=0').fetchone()[0],
+                                inbox_processed=db.execute('SELECT COUNT(*) FROM inbox').fetchone()[0])
                     else:
                         result = app.dispatch(self.command, self.path.split('?')[0], body, self.headers, corr)
                 except Problem as e:
@@ -293,8 +355,9 @@ class Service:
                     pass
                 log(app.name, 'http.request', corr, method=self.command, path=self.path.split('?')[0],
                     result=status, duration_ms=round((time.monotonic()-started)*1000, 2))
+                TRACE.reset(context)
 
-        if self.name != 'broker':
+        if self.name not in ('broker','observability'):
             threading.Thread(target=self.publish_loop, daemon=True).start()
             if any(self.name in subscribers for subscribers in SUBSCRIPTIONS.values()):
                 threading.Thread(target=self.consume_loop, daemon=True).start()

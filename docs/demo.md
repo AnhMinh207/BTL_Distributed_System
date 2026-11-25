@@ -2,7 +2,7 @@
 
 ## Demo giao diện trực quan
 
-Chạy `python scripts/start.py --open`, mở **http://127.0.0.1:8080**. Chọn **Chuẩn bị demo**, ở vai trò **Hành khách** nhấn **Đặt xe ngay**. Chuyển sang **Tài xế**, nhấn **Chấp nhận chuyến → Đã đón khách · Bắt đầu → Hoàn thành chuyến**. Chuyển lại Hành khách để xem hoàn tất, lịch sử, thanh toán và thông báo. Nút mũi tên ở thẻ **Xem một chuyến đi trọn vẹn** sẽ tự chạy toàn bộ luồng thật và hiển thị tiến độ bảy bước.
+Chạy `python scripts/start.py --open`, mở **http://127.0.0.1:8080**. Chọn **Demo → Chuẩn bị demo** ở góc trên, ở vai trò **Hành khách** nhấn **Đặt xe ngay**. Chuyển sang **Tài xế**, nhấn **Chấp nhận chuyến → Đã đón khách · Bắt đầu → Hoàn thành chuyến**. Chuyển lại Hành khách để xem hoàn tất, lịch sử, thanh toán và thông báo. **Demo → Chạy chuyến mẫu** tự chạy toàn bộ luồng thật và hiển thị tiến độ bảy bước.
 
 Để trình bày lỗi, dừng một dịch vụ từ terminal rồi mở mục **Trạng thái hệ thống** trên web; booking/payment sẽ chờ hoặc báo lỗi theo giai đoạn. Các cảnh kill/retry/DLQ bên dưới vẫn chạy được độc lập để chứng minh cơ chế chi tiết. Không mở API quản trị broker ra giao diện người dùng.
 

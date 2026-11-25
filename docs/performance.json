@@ -3,10 +3,10 @@
   "requests": 100,
   "concurrency": 10,
   "success_rate": 1.0,
-  "duration_seconds": 0.661,
-  "throughput_rps": 151.27,
-  "p50_ms": 15.05,
-  "p95_ms": 39.2,
-  "max_ms": 610.05,
+  "duration_seconds": 0.582,
+  "throughput_rps": 171.72,
+  "p50_ms": 17.62,
+  "p95_ms": 40.78,
+  "max_ms": 536.29,
   "scope": "Local processes; authenticated reads only; not booking throughput"
 }

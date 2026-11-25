@@ -1,5 +1,7 @@
 # Thiết kế giao thức, dữ liệu và API
 
+**Cập nhật kiến trúc:** đã bổ sung Pricing :8107, Observability :8108, circuit breaker và parent-child tracing. Hiện có 7 business service, 9 backend + web Gateway. API mới: Pricing `POST /quote` (user token), `POST /internal/quote`; Driver `POST /internal/supply`; Trip `POST /internal/demand`; mọi backend `GET /internal/metrics` (service key); collector `/records`, `/logs`, `/traces`, `/traces/{id}`, `/instances` (service key). Gateway `/api/operations/*` yêu cầu OPERATIONS_KEY. Xem [advanced.md](advanced.md) và [ds03-audit.md](ds03-audit.md) cho phạm vi/bằng chứng mới; các đoạn baseline bên dưới cần đọc cùng cập nhật này.
+
 ## Ranh giới triển khai
 
 `python -m src.main <name>` chạy đúng một dịch vụ, bind một cổng HTTP và mở đúng một database tại `$DATA_DIR/<name>/state.db`. `scripts/cluster.py` chỉ là trình khởi chạy tiến trình, không thực hiện nghiệp vụ và không dùng file để truyền thông giữa các service. Mỗi container mount volume riêng; SQLite không phải database dùng chung.

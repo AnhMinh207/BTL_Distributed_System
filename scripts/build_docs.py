@@ -58,7 +58,7 @@ def document(pages, slides=False):
     for i, (title, content) in enumerate(pages, 1):
         output += '<section class="page"><div class="eyebrow">DISTRIBUTED SYSTEMS · DS03 · RIDE HAILING</div>'
         output += '<h1>' + title + '</h1>' + content
-        output += f'<footer><span>DS03 · Prototype học phần · 03/11/2026</span><span>{i} / {len(pages)}</span></footer></section>'
+        output += f'<footer><span>DS03 · Prototype học phần · 25/11/2026</span><span>{i} / {len(pages)}</span></footer></section>'
     return output + '</body></html>'
 
 
@@ -79,6 +79,10 @@ def main():
         docker_note = (f'Bản web đã chạy 8 container healthy và {web_docker["browser_checks_passed"]} kiểm tra Edge thật. '
                        f'Bộ backend trước đó đạt {docker_passed}/8 ca Docker chọn lọc, gồm kill/restart Payment và Broker. '
                        'Nguồn: docs/docker-web-results.json và docs/docker-results.json.')
+    latest_docker=DOCS/'final-docker-results.json'
+    if latest_docker.exists():
+        checked=json.loads(latest_docker.read_text(encoding='utf-8'))
+        docker_note=f'Bản cập nhật đã kiểm chứng {checked["healthy_containers"]} container healthy, gồm 3 Matching replica đều xử lý event thật; 8/8 ca HTTP Docker đạt. Dashboard và business UI đã kiểm tra trên Edge. Nguồn: final-docker-results.json, docker-results.json và operations-browser-results.json.'
     def team_value(label):
         prefix = '- ' + label + ': '
         return esc(next((line[len(prefix):] for line in team.splitlines() if line.startswith(prefix)), '[điền]'))
@@ -91,7 +95,7 @@ def main():
         p('Mô phỏng Grab/Uber · REST · Message Queue · Saga · Eventual Consistency') +
         p(f'Nhóm: {team_value("Tên nhóm")} · Lớp: {team_value("Lớp")}<br>Giảng viên: {team_value("Giảng viên")}') +
         p('Thành viên và MSSV: hoàn thiện theo trang 2 và docs/team.md.') +
-        p('Ngày tạo bản triển khai: 03/11/2026 · Nguồn yêu cầu: COURSE PROJECT SPECIFICATION.pdf') +
+        p('Ngày tạo bản triển khai: 25/11/2026 · Nguồn yêu cầu: COURSE PROJECT SPECIFICATION.pdf') +
         '<div class="callout">Bản kỹ thuật có kết quả chạy thực. Cần hoàn thiện thông tin nhóm, bằng chứng đóng góp và chạy lại trên máy nhóm trước nộp.</div></div>')
     add('1. Thông tin nhóm và phân công',
         p('Đề quy định nhóm tối đa 3 thành viên, mỗi người phụ trách phần việc cụ thể và có bằng chứng trên GitHub. Chưa có thông tin cá nhân trong yêu cầu nên báo cáo giữ các trường trống có chủ đích; bảng dưới là đề xuất để nhóm điều chỉnh, không xác nhận đóng góp đã xảy ra.') +
@@ -102,13 +106,13 @@ def main():
         p('Thông tin nguồn hiện có trong docs/team.md:') + code(team[:2400]) +
         p('Các thành viên cần hiểu toàn bộ kiến trúc, tham gia demo và giải thích cơ chế mình triển khai. Nếu nhóm có ít hơn 3 người, phân công lại đủ phạm vi. Không tạo lịch sử Git hay danh tính giả để thay bằng chứng thực tế.'))
     add('2. Tóm tắt và cấu trúc báo cáo',
-        p('Dự án xây dựng prototype đặt xe từ lúc hành khách gửi yêu cầu đến khi tài xế hoàn tất và thanh toán mô phỏng. Hệ thống gồm Identity, Driver, Trip, Matching, Payment, Notification và một broker riêng. Mỗi dịch vụ chạy trong tiến trình độc lập, sở hữu SQLite riêng và giao tiếp qua mạng; không truy vấn chéo dữ liệu.') +
+        p('Dự án xây dựng prototype đặt xe từ lúc hành khách gửi yêu cầu đến khi tài xế hoàn tất và thanh toán mô phỏng. Hệ thống gồm Identity, Driver, Trip, Matching, Pricing, Payment, Notification và một broker riêng. Mỗi dịch vụ chạy trong tiến trình độc lập, sở hữu SQLite riêng và giao tiếp qua mạng; không truy vấn chéo dữ liệu.') +
         p('Luồng đồng bộ dùng REST để đăng nhập, thao tác chuyến và giữ tài xế. Luồng bất đồng bộ dùng hàng đợi có lưu bền, lease, ACK, retry và dead-letter. Saga phối hợp các giao dịch cục bộ; hủy, quá hạn hoặc thanh toán thất bại kích hoạt giải phóng tài xế. Outbox và inbox giảm rủi ro mất sự kiện và lặp tác dụng sau crash.') +
-        p(f'Bộ đánh giá chạy {results["tests"]} bài qua HTTP thật giữa 7 tiến trình: {passed} đạt, {results["failures"]} thất bại và {results["errors"]} lỗi. Mất kết nối được tái hiện bằng kill tiến trình, không thay bằng biến trạng thái giả. ' + docker_note) +
+        p(f'Bộ đánh giá chạy {results["tests"]} bài qua HTTP thật giữa 9 tiến trình: {passed} đạt, {results["failures"]} thất bại và {results["errors"]} lỗi. Mất kết nối được tái hiện bằng kill tiến trình, không thay bằng biến trạng thái giả. ' + docker_note) +
         table(['Phạm vi', 'Trang'], [('Bài toán, phân tích, kiến trúc', '4–8'), ('API, MQ, discovery', '9–11'),
              ('Đồng thời, nhất quán, Saga', '12–14'), ('Lỗi, bảo mật, triển khai', '15–18'),
              ('Kiểm thử, hiệu năng', '19–21'), ('Giới hạn, kết luận, tham khảo, phụ lục', '22–24')]) +
-        p('Đây là sản phẩm học phần; chưa phải dịch vụ gọi xe vận hành công khai. Có web tiếng Việt cho hai vai trò và CLI. Sơ đồ vị trí SVG, tọa độ và thanh toán được mô phỏng; chưa có bản đồ đường bộ hoặc tiền thật.'))
+        p('Đây là sản phẩm học phần; chưa phải dịch vụ gọi xe vận hành công khai. Có web tiếng Việt cho hai vai trò và CLI. Bản đồ đường phố thật dùng OpenStreetMap + Leaflet, hỗ trợ click/kéo ghim lấy tọa độ. Vị trí tài xế demo và thanh toán được mô phỏng; chưa có chỉ đường/ETA hay tiền thật.'))
     add('3. Bài toán và yêu cầu',
         p('Hành khách muốn tạo chuyến với điểm đón và điểm đến. Tài xế công bố trạng thái cùng vị trí mô phỏng, nhận đề nghị rồi chấp nhận hoặc từ chối. Sau khi chấp nhận, tài xế bắt đầu và hoàn thành chuyến. Hệ thống tính giá phía server, tạo thanh toán mô phỏng và thông báo cho các bên liên quan.') +
         p('Rủi ro trung tâm là hai yêu cầu gần đồng thời tranh cùng một tài xế, cùng một yêu cầu được gửi lại do timeout, hoặc một bước đã commit nhưng bước tiếp theo chưa nhận sự kiện. Trạng thái không thể chỉ đặt trong RAM hoặc database chung vì các dịch vụ cần chạy và phục hồi độc lập.') +
@@ -129,19 +133,19 @@ def main():
         p('Khi dependency không hoạt động, hệ thống ưu tiên giữ các invariant và dữ liệu đã commit. Nó có thể tạm thời không cấp chuyến mới hoặc giữ driver busy khi chờ payment, chấp nhận giảm availability thay vì gán một tài xế cho hai chuyến.'))
     add('5. Phân tích và lựa chọn giải pháp',
         table(['Lựa chọn', 'Áp dụng và lý do', 'Đánh đổi'], [
-            ('Python chuẩn + HTTP JSON', 'Không phụ thuộc pip; dễ chạy 7 process; dễ quan sát giao thức', 'http.server chỉ phù hợp prototype'),
+            ('Python chuẩn + HTTP JSON', 'Không phụ thuộc pip; dễ chạy 9 process; dễ quan sát giao thức', 'http.server chỉ phù hợp prototype'),
             ('SQLite riêng/service', 'Giao dịch ACID cục bộ, unique constraints, persistence', 'Một writer mỗi DB; chưa replication'),
             ('Broker tự triển khai', 'Kiểm chứng enqueue/lease/ACK/DLQ rõ trong code', 'Chưa có HA và vận hành như RabbitMQ'),
             ('Saga choreography', 'Các service phản ứng qua event, không transaction chung', 'Theo dõi luồng khó hơn; cần correlation ID'),
             ('Outbox + inbox', 'Đóng khoảng trống commit DB/publish và process/ACK', 'Cần polling; lưu log tăng theo thời gian'),
-            ('Web + CLI', 'Web hai vai trò, sơ đồ tọa độ, timeline, demo thật; CLI để vận hành', 'Sơ đồ minh họa, chưa bản đồ đường bộ/ETA')]) +
+            ('Web + CLI', 'Web hai vai trò, OpenStreetMap + Leaflet, timeline, demo thật; CLI để vận hành', 'Tile/tìm địa chỉ cần Internet; chưa chỉ đường/ETA')]) +
         p('Không sử dụng một sản phẩm gọi xe có sẵn rồi đổi giao diện. Các cơ chế cốt lõi được hiện thực trực tiếp: reserve nguyên tử, version guard, outbox/inbox, queue receipt/lease, retry, DLQ, redrive, compensation và tombstone. Thư viện chuẩn cung cấp HTTP, SQLite, hash, tiến trình và kiểm thử.') +
         p('Một broker chuyên dụng là hướng nâng cấp hợp lý, nhưng không tự động thay thế idempotency hay Saga. Dù dùng broker nào, nếu consumer commit rồi crash trước ACK, việc giao lại vẫn phải được xử lý bằng khóa nghiệp vụ/inbox. Thiết kế giữ rõ ranh giới này.'))
     add('6. Kiến trúc tổng thể',
         '<div class="diagram">Web passenger / driver :8080 · CLI<br>↓ Public API Proxy + REST + bearer token<br>Identity · Driver · Trip · Payment · Notification<br><br>Trip outbox → Durable Broker → Matching<br>Matching → REST reserve → Driver<br>Matching outbox → Broker → Trip<br>Trip completed → Broker → Payment<br>Payment result → Broker → Trip + Driver + Notification</div>' +
         p('Mỗi khối là một tiến trình và một database. Matching không đọc bảng Driver: nó gửi POST /internal/reserve và nhận driver_id. Trip không đọc Payment: nó nhận payment.succeeded hoặc payment.failed qua queue. Notification không truy vấn Trip để tạo thông báo: dữ liệu cần thiết được mang trong event.') +
         p('Producer ghi business state và outbox trong một transaction. Publisher đưa envelope tới Broker, Broker commit rồi trả ACK. Consumer chủ động claim, xử lý business state và inbox, commit rồi ACK delivery. Broker không chạy logic matching, tính fare hay thay đổi lifecycle.') +
-        p('Web proxy chỉ forward API công khai qua allowlist, không đọc DB hoặc mở API nội bộ. Sáu dịch vụ nghiệp vụ vượt tối thiểu bốn; web và broker không được tính. Compose có tám container, bảy backend có volume riêng. Frontend polling trạng thái mỗi 2 giây; backend quyết định toàn bộ kết quả nghiệp vụ.'))
+        p('Web proxy chỉ forward API công khai qua allowlist, không đọc DB hoặc mở API nội bộ. Bảy dịch vụ nghiệp vụ vượt tối thiểu bốn; web và broker không được tính. Compose có mười container, chín backend có volume riêng. Frontend polling trạng thái mỗi 2 giây; backend quyết định toàn bộ kết quả nghiệp vụ.'))
     add('7. Thành phần và thiết kế dữ liệu',
         table(['Service', 'Bảng chính', 'Khóa/ràng buộc'], [
             ('Identity', 'users', 'id PK; username UNIQUE; salt + password_hash'),
@@ -178,7 +182,7 @@ def main():
         p('Broker lưu envelope một lần và tạo một delivery cho từng queue subscriber trong cùng transaction. Publish cùng ID/nội dung trả duplicate=true; cùng ID khác nội dung bị từ chối. Consumer claim nhận event và receipt duy nhất; chỉ receipt còn lease mới ACK/NACK được.') +
         p('Producer không gọi trực tiếp consumer để hoàn tất nghiệp vụ. Khi Payment dừng, trip.completed vẫn enqueue được và được xử lý sau restart. HTTP là transport để publish/pull, còn ngữ nghĩa là durable asynchronous message queue. Thứ tự retry không được cam kết FIFO tuyệt đối; correctness dựa vào dedup và guard trạng thái.'))
     add('10. Định danh, discovery và thời gian',
-        p('Service có tên ổn định và cổng mặc định 8100–8106. User, trip, event và receipt dùng UUID; Correlation ID được giữ trong mọi event của một Saga. Event ID dùng chống trùng; trip_id dùng idempotency nghiệp vụ; correlation_id chỉ để truy vết và không thay thế hai khóa trên.') +
+        p('Service có tên ổn định và cổng mặc định 8100–8108. User, trip, event và receipt dùng UUID; Correlation ID được giữ trong mọi event của một Saga. Event ID dùng chống trùng; trip_id dùng idempotency nghiệp vụ; correlation_id chỉ để truy vết và không thay thế hai khóa trên.') +
         table(['Cơ chế', 'Cách triển khai'], [('Local discovery', 'BROKER_URL, DRIVER_URL và các biến SERVICE_URL'),
               ('Compose discovery', 'DNS broker, driver… trên network ds03'),
               ('Service health', 'GET /health kiểm DB riêng; HTTP timeout phát hiện dependency fail'),
@@ -234,19 +238,19 @@ def main():
         p('HTTP localhost/Compose là cấu hình demo. Trước khi mở Internet phải bổ sung TLS, reverse proxy, giới hạn tốc độ và nguồn kết nối. Python http.server được dùng để dễ kiểm chứng, chưa là application server sản xuất. Các hạn chế được ghi để tránh hiểu nhầm mức an toàn mà kiểm thử hiện tại chứng minh.'))
     add('16. Hiện thực và cấu trúc mã',
         table(['Thư mục/file', 'Nội dung'], [('src/common.py', 'HTTP adapter, config, auth, DB transaction, publisher/consumer worker'),
-              ('src/{identity,driver,trip,matching,payment,notification}.py', 'Sáu domain service, mỗi service chỉ DB riêng'),
+              ('src/{identity,driver,trip,matching,pricing,payment,notification}.py', 'Bảy domain service, mỗi service chỉ DB riêng'),
               ('src/broker.py', 'Durable event/delivery queue, lease, retry, dead letter, redrive'),
               ('src/main.py', 'Entrypoint một service, kiểm secret tối thiểu'),
               ('src/web/ và scripts/web.py', 'Web tiếng Việt và public API proxy; không mở internal/broker API'),
               ('scripts/', 'Configure, start web/cluster, CLI, tests, demo, tạo/xuất tài liệu'),
               ('tests/test_system.py', 'Black-box integration trên network, concurrency, kill/restart'),
-              ('deploy/', 'Dockerfile non-root, Compose 8 container; 7 backend/volume riêng'),
+              ('deploy/', 'Dockerfile non-root, Compose 10 container; 9 backend/volume riêng'),
               ('docs/', 'Thiết kế, ma trận yêu cầu, nhóm, số đo, PDF, demo, checklist')]) +
         p('Công thức fare dùng khoảng cách đường chim bay Haversine trên bán kính Trái Đất 6.371 km: 12.000 VND cơ bản + round(8.000 × km). Đây không phải lộ trình đường bộ hoặc bảng giá chính thức Grab/Uber. Driver được lọc trong bán kính 20 km, gần nhất thắng, UUID làm tie-break ổn định.') +
-        p('Worker publisher và consumer chạy thread bên trong từng service. Đây là xử lý nội bộ; giao tiếp sang service khác vẫn qua HTTP. HTTP server tiếp nhận nhiều request song song; ghi dữ liệu được serialize tại DB sở hữu. Launcher tạo bảy tiến trình OS độc lập, không dùng thread để giả lập bảy microservice.') +
+        p('Worker publisher và consumer chạy thread bên trong từng service. Đây là xử lý nội bộ; giao tiếp sang service khác vẫn qua HTTP. HTTP server tiếp nhận nhiều request song song; ghi dữ liệu được serialize tại DB sở hữu. Launcher tạo chín tiến trình OS độc lập, không dùng thread để giả lập chín thành phần.') +
         p('Không cần cài package pip để chạy sản phẩm và test. Tài liệu HTML/PDF cũng có script riêng, không nằm trên đường xử lý nghiệp vụ. Mọi module chuẩn được liệt kê trong mã import và nguồn tham khảo cuối báo cáo.'))
     add('17. Cài đặt và tái triển khai',
-        p('Môi trường xác nhận: Windows, Python 3.13, bảy process localhost. Mã dùng thư viện chuẩn, yêu cầu Python 3.11+. Cổng sản phẩm 8100–8106; test/demo 9100–9106. Tạo secret một lần, giữ .env ngoài repository.') +
+        p('Môi trường xác nhận: Windows, Python 3.13, chín process localhost. Mã dùng thư viện chuẩn, yêu cầu Python 3.11+. Cổng sản phẩm 8100–8108; test/demo 9100–9108. Tạo secret một lần, giữ .env ngoài repository.') +
         code('python scripts/start.py --open\n# Trình duyệt: http://127.0.0.1:8080\n# Chọn Chuẩn bị demo → Đặt xe → đổi sang Tài xế\n# Chấp nhận → Bắt đầu → Hoàn thành\n# Xem lịch sử, thanh toán, thông báo\n# CLI tùy chọn: python scripts/client.py status') +
         p('Docker Compose dùng DNS service, healthcheck, user không phải root và volume riêng. Host chỉ publish 127.0.0.1. Có thể start/stop riêng Payment để chứng minh xử lý độc lập. Tái triển khai giữ nguyên volume; không dùng down -v khi cần phục hồi dữ liệu.') +
         code('docker compose --env-file .env -f deploy/compose.yaml up --build -d\ndocker compose --env-file .env -f deploy/compose.yaml stop payment\ndocker compose --env-file .env -f deploy/compose.yaml start payment\ndocker compose --env-file .env -f deploy/compose.yaml down\n# Chạy lại up để tái triển khai, dữ liệu vẫn trong named volumes') +
@@ -254,7 +258,7 @@ def main():
         p('Backup/restore phải tôn trọng ranh giới dữ liệu từng service. Chưa có coordinated snapshot hoặc replication. Tái triển khai trên nhiều máy cần chỉnh SERVICE_URL/HOST, firewall và bảo vệ secret; chưa đo latency WAN.'))
     functional = [r for r in results['results'] if r['test'].startswith('test_F')]
     add('18. Kiểm thử chức năng',
-        p('Bộ test tạo tài khoản, request và token qua API công khai, gọi service qua HTTP trên bảy process thực. Mỗi run có thư mục database/log riêng và random secret. Không dùng mock network để thay thế các luồng chính. Dữ liệu test được tách bằng vị trí cách xa nhau để driver của một tình huống không ảnh hưởng matching tình huống khác.') +
+        p('Bộ test tạo tài khoản, request và token qua API công khai, gọi service qua HTTP trên chín process thực. Mỗi run có thư mục database/log riêng và random secret. Không dùng mock network để thay thế các luồng chính. Dữ liệu test được tách bằng vị trí cách xa nhau để driver của một tình huống không ảnh hưởng matching tình huống khác.') +
         table(['Test', 'Chức năng', 'Kết quả'], [(r['test'].split('_')[1], r['test'][9:].replace('_', ' '), r['status']) for r in functional]) +
         p('F03 kiểm cả full lifecycle, ledger paid, release tài xế và không cho tài xế tự chuyển available khi có chuyến. F06 kiểm notification của cả hai vai trò. F07 kiểm cùng key trả cùng trip và khác payload trả 409. F09 kiểm decline giữ ledger và Saga release. F11 kiểm broker dedup cùng envelope và reject event ID bị tái sử dụng khác nội dung.') +
         p('Chi tiết assertion nằm trong tests/test_system.py. Kết quả từng bài, thời gian và lỗi nếu có được ghi tự động vào docs/test-results.json; báo cáo này đọc từ file đó, không ghi tay PASS cho những tình huống chưa chạy.'))
@@ -278,16 +282,16 @@ def main():
         p('Đo bằng time.perf_counter ở client, bao gồm thiết lập HTTP connection, xác thực token, đọc DB và parse response. Có 10 worker và tổng 100 request GET /trips của một user; p50/p95 lấy từ danh sách latency đã sắp. Không có SLA đặt sẵn nên không biến số đo thành cam kết.') +
         p('Kết quả là một lần chạy localhost trên máy thực hiện, có hoạt động nền của các service. Không suy ra booking throughput, latency p95 WAN, số driver tối đa hay khả năng mở rộng đa máy. Chưa đo CPU/RAM/bandwidth; các chỉ số này là tùy chọn trong đề, không được bịa thêm.'))
     add('21. Hạn chế và hướng phát triển',
-        bullets('<strong>Availability:</strong> Broker và mỗi service chỉ có một instance; persistence chưa thay thế replication. Cần broker cluster và database replication để chịu mất node/đĩa.',
+        bullets('<strong>Availability:</strong> Matching đã có profile 3 replica; Broker và các business writer SQLite khác vẫn một instance. Persistence chưa thay thế replication; chưa chịu mất đĩa hoặc node.',
                 '<strong>Scalability:</strong> SQLite một writer/service, queue polling và HTTP connection mới cho mỗi call giới hạn throughput. Cần benchmark booking và cân nhắc PostgreSQL, connection pool, broker chuyên dụng.',
                 '<strong>Nghiệp vụ:</strong> Chưa có đường đi thực, ETA, đánh giá tài xế, hủy khi đang chạy, tái matching sau reject hay công nợ/refund thực. Decline hiện chỉ đóng Saga mô phỏng.',
                 '<strong>Bảo mật:</strong> Chưa TLS/mTLS, ACL từng service, token revoke, rate limit hoặc secret rotation. http.server chỉ phù hợp prototype trong phạm vi kiểm soát.',
-                '<strong>Vận hành:</strong> DLQ redrive thủ công; chưa retention/compaction inbox/outbox/events; log và DB tăng theo thời gian. Cần dashboard queue age, lag, tỷ lệ lỗi và cảnh báo.',
-                '<strong>Giao diện:</strong> Web responsive đã có đầy đủ vai trò, lịch sử/thanh toán/thông báo và demo. Sơ đồ SVG minh họa tọa độ; chưa bản đồ đường bộ, ETA hoặc mobile app native. Notification là hộp thư pull, chưa push/email/SMS.') +
+                '<strong>Vận hành:</strong> Đã có dashboard metrics/log/trace và collector retention khoảng 50k dòng. DLQ redrive vẫn thủ công; inbox/outbox/events chưa compaction. Cần bổ sung cảnh báo queue age/lag và SLA.',
+                '<strong>Giao diện:</strong> Web responsive có OpenStreetMap thật + Leaflet, click/kéo ghim lấy tọa độ, tìm địa chỉ qua Photon. Không cần API key. Máy chủ tile công cộng phù hợp demo nhỏ, chưa có SLA; chưa chỉ đường/ETA hoặc mobile app native. Notification là hộp thư pull, chưa push/email/SMS.') +
         p('Ưu tiên phát triển: bổ sung TLS/rate-limit và ACL nội bộ; sau đó đo end-to-end booking/độ phục hồi nhiều máy; cuối cùng mới mở rộng thuật toán matching và trải nghiệm giao diện. Không dùng nhiều instance SQLite ghi chung file để tạo cảm giác đã scale ngang.') +
         p('Những yêu cầu bên ngoài mã nguồn vẫn còn phụ thuộc nhóm: đăng ký thông tin với giảng viên, commit từng thành viên, cấp quyền repository, tạo tag/release và tham gia demo/vấn đáp. Chúng được liệt kê rõ trong checklist bàn giao.'))
     add('22. Kết luận và tài liệu tham khảo',
-        p(f'Prototype thể hiện sáu business service độc lập, REST và MQ, quyền sở hữu dữ liệu tách biệt, tranh chấp tài xế, Saga compensation và phục hồi process. Kết quả thực hiện có {passed}/{results["tests"]} bài đạt. Các kết luận giới hạn trong failure model và workload đã chạy; không khẳng định đạt HA hoặc sẵn sàng Internet.') +
+        p(f'Prototype thể hiện bảy business service độc lập, REST và MQ, quyền sở hữu dữ liệu tách biệt, tranh chấp tài xế, Saga compensation và phục hồi process. Kết quả thực hiện có {passed}/{results["tests"]} bài đạt. Các kết luận giới hạn trong failure model và workload đã chạy; không khẳng định đạt HA hoặc sẵn sàng Internet.') +
         p('Nguồn tham khảo được diễn giải và áp dụng cho thiết kế riêng. Không sao chép một sản phẩm hoàn chỉnh để thay giao diện. Các tài liệu pattern giải thích cơ chế, còn bằng chứng triển khai nằm ở mã và test của dự án.') +
         bullets('[1] COURSE PROJECT SPECIFICATION.pdf, tài liệu đề bài người dùng cung cấp; các mục 4, 7, 9–13.',
                 '[2] Chris Richardson, <a href="https://microservices.io/patterns/data/saga.html">Pattern: Saga</a>, microservices.io.',
@@ -299,27 +303,46 @@ def main():
     add('Phụ lục: tái lập và bàn giao',
         code('python scripts/start.py --open\npython scripts/test.py\npython tests/test_web.py\npython scripts/demo.py --pause\npython scripts/build_docs.py\npython scripts/export_pdf.py') +
         p('Nguồn bằng chứng: docs/test-results.json, docs/performance.json và log JSONL trong run_directory của kết quả. docs/evidence.jsonl chứa một mẫu sự kiện từ lần chạy gần nhất; xem đủ log runtime khi cần truy vết. Thời gian log UTC; ngày trình bày trong tài liệu theo lịch học phần.') +
-        p('Web được kiểm chứng riêng bằng 6 bài proxy và các thao tác trên Edge thật, gồm đặt xe/nhận chuyến/thanh toán, demo tự động, session reload và mobile không tràn ngang. Kết quả: docs/web-test-results.json, docs/browser-results.json. Demo vấn đáp tiếp tục dùng sáu cảnh phân tán trong docs/demo.md; mọi thành viên trình bày phần việc thật.') +
+        p('Web được kiểm chứng riêng bằng 9 bài proxy và các thao tác trên Edge thật, gồm đặt xe/nhận chuyến/thanh toán, demo tự động, session reload và mobile không tràn ngang. Kết quả: docs/web-test-results.json, docs/browser-results.json. Demo vấn đáp tiếp tục dùng sáu cảnh phân tán trong docs/demo.md; mọi thành viên trình bày phần việc thật.') +
         table(['Trước nộp', 'Người thực hiện'], [('Điền tên, MSSV, lớp, giảng viên và repo; cập nhật bìa', 'Nhóm'),
               ('Commit/PR của từng người, review và hiểu code', 'Từng thành viên'),
               ('Chạy Compose, kiểm tra PDF/font và số đo mới nhất', 'Nhóm'),
               ('GitHub repo, quyền giảng viên, final tag/release', 'Chủ repo'),
               ('Đăng ký nhóm, nộp đúng hạn, demo/vấn đáp', 'Nhóm')]) +
         p('Mốc từ tài liệu đề: nộp báo cáo và source ngày 22/11/2026 qua GitHub; demo/vấn đáp ngày 23/11/2026 và 30/11/2026. Theo thông báo giảng viên nếu thay đổi. Dự án chưa tự push, tạo release hoặc xác nhận nhóm đã nộp bài.'))
-    assert len(pages) == 24
+    add('Bổ sung: Pricing và circuit breaker',
+        p('Bản cập nhật có 7 business service: Identity, Driver, Trip, Matching, Pricing, Payment, Notification. Broker và Observability là hạ tầng; web là Gateway. Chín backend chạy ở 8100–8108, mỗi service sở hữu DB riêng; web tại 8080.') +
+        p('Trip gọi Pricing trước khi mở write transaction. Pricing hỏi supply từ Driver và demand từ Trip qua REST, không đọc database chéo. Quote được lưu idempotent theo khóa hành khách/yêu cầu; cùng key không tạo thêm chuyến và không tính lại fare sau retry.') +
+        code('base = 12000 + round(distance_km * 8000)\nmultiplier = min(2, 1 + 0.25 * max(0, waiting - available))\nfare = round(base * multiplier)') +
+        p('Chỉ đếm waiting mới trong 120 giây và available driver có presence hợp lệ trong 20km. Nếu một nguồn supply/demand offline, quote dùng base fare và ghi degraded_dependencies. DYNAMIC_PRICING=0 tắt surge. Web hiển thị ước tính; fare cuối từ response Trip.') +
+        p('Circuit breaker theo endpoint/process: 3 lỗi mạng/5xx mở circuit 2 giây; sau cooldown chỉ một half-open probe. Thành công đóng circuit, thất bại mở lại; 4xx không đếm outage. Broker delay retry khi consumer báo circuit open để tránh dùng hết attempts trong lúc cooldown.') +
+        p('A01 kiểm state machine; A02 kiểm surge và quote replay; A05 kiểm replay booking khi Pricing restart; R03 kiểm circuit failures thật khi Driver bị kill. Không dùng breaker như thay thế Saga hoặc dedup.'))
+    add('Bổ sung: log, trace và monitoring',
+        p('Observability :8108 là collector có DB riêng, không đọc bảng business. Service gửi log qua HTTP service-auth bằng queue giới hạn 2000 record, collector giữ khoảng 50.000 dòng. Telemetry best-effort; mất collector không chặn nghiệp vụ, local JSONL vẫn được ghi.') +
+        p('Trace chứa trace_id, span_id, parent_span_id, operation, duration và result. HTTP client tạo child span, server nối parent; event mang producer parent để consumer tạo span tiếp theo. Có thể theo một Correlation ID xuyên Pricing, Trip, Matching, Driver, Payment, Notification và Broker. Đây là tracing hiện thực trong ứng dụng, chưa phải OpenTelemetry/W3C traceparent.') +
+        p('Trong web mở Hệ thống → Giám sát vận hành. OPERATIONS_KEY riêng bảo vệ dashboard, token hành khách/tài xế và service key không được dùng thay. Key chỉ giữ trong memory, không lưu browser storage. Dashboard đọc health, outbox/inbox, circuits, queue/DLQ, log tập trung và trace spans.') +
+        p('Service heartbeat 10 giây, instance có record trong 35 giây được đánh dấu online; health trực tiếp phát hiện dependency down nhanh hơn. Discovery dùng URL môi trường và Docker DNS, chưa có Consul/Eureka. Web proxy chỉ cho route công khai, không forward service key từ user.') +
+        p('A03 kiểm parent-child links và số node trong trace thật; W09 kiểm quyền dashboard; browser kiểm đăng nhập vận hành, metrics, logs, trace và disconnect. Bằng chứng: trace-example.json, operations-browser-results.json và ảnh ui-operations.png.'))
+    add('Bổ sung: scaling và kiểm chứng DS03',
+        p('Matching là competing consumer có thể chạy nhiều instance. Mỗi replica sở hữu DB/namespace riêng và nhận message qua broker claim/lease/ACK. Driver quyết định reservation nguyên tử và idempotent theo trip_id, nên redelivery sang replica khác không gán hai chuyến cho một tài xế.') +
+        code('docker compose --env-file .env -f deploy/compose.yaml -f deploy/scale.yaml up --build -d\npython tests/test_advanced.py\npython scripts/advanced_demo.py --pause') +
+        p('A04 đã chạy 2 process Matching, cả hai xử lý event thật; kill một process và instance còn lại tiếp tục xử lý. deploy/scale.yaml cấu hình 3 container, bỏ host port trùng và cấp volume riêng. Broker/Driver/Trip và các writer SQLite khác vẫn một instance, chưa chịu mất đĩa hay đạt HA.') +
+        p('Bộ đánh giá tách rõ phạm vi: 24 bài bắt buộc; 6 nâng cao; 9 gateway; các ca Docker/browser là chạy kiểm chứng trên môi trường khác, không tính thành bài nghiệp vụ mới. 7.5 là phần nâng cao trong đề; các nhóm tính năng đã có hiện thực, với giới hạn cụ thể như audit.') +
+        p('Mở docs/ds03-audit.md để đối chiếu từng dòng 7.1–7.5; docs/advanced.md có hướng dẫn tái lập. Các file kết quả được sinh từ lần chạy thật. Nhóm vẫn phải hoàn thiện tên/MSSV, đóng góp GitHub, đăng ký và vấn đáp theo yêu cầu học phần.'))
+    assert len(pages) == 27
     (DOCS / 'report.html').write_text(document(pages), encoding='utf-8')
     slides = [
-        ('DS03 · Hệ thống gọi xe', p('6 business microservice · Web + CLI · REST · Durable MQ · Saga') + p('Nhóm / lớp / MSSV: hoàn thiện theo docs/team.md') + p('Bản triển khai và kiểm chứng: 03/11/2026')),
+        ('DS03 · Hệ thống gọi xe', p('7 business microservice · Web + CLI · REST · Durable MQ · Saga') + p('Nhóm / lớp / MSSV: hoàn thiện theo docs/team.md') + p('Bản triển khai và kiểm chứng: 25/11/2026')),
         ('Bài toán và tiêu chí', bullets('Đăng ký hai vai trò; driver cập nhật vị trí và trạng thái.', 'Booking → matching → accept/reject → hoàn tất → payment.', 'Không double-book; retry/dedup/DLQ; compensation; phục hồi thật.')),
-        ('Kiến trúc và dữ liệu', '<div class="diagram">Identity · Driver · Trip · Matching · Payment · Notification<br>mỗi service một process và một database<br>REST đồng bộ + Broker bất đồng bộ<br>Broker là hạ tầng, không tính business service</div>'),
+        ('Kiến trúc và dữ liệu', '<div class="diagram">Identity · Driver · Trip · Matching · Pricing · Payment · Notification<br>mỗi service một process và một database<br>REST đồng bộ + Broker bất đồng bộ<br>Broker là hạ tầng, không tính business service</div>'),
         ('Luồng nghiệp vụ', '<div class="diagram">Trip requested → MQ → Matching → REST Driver reserve<br>MQ → Trip offered → accept → start → complete<br>MQ → Payment → MQ → Trip terminal + Driver release</div>'),
         ('Không gán hai chuyến cho một tài xế', bullets('BEGIN IMMEDIATE: chọn available và giữ active_trip cùng transaction.', 'Reservation idempotent theo trip_id; một passenger chỉ có một chuyến active.', 'Version guard: hai lệnh accept/reject cùng phiên bản chỉ một thắng.')),
         ('Message reliability', bullets('Outbox commit cùng state; publish lại cùng event ID nếu mất ACK.', 'Broker lưu bền; claim/lease/receipt; bounded retry; DLQ/redrive.', 'Inbox commit cùng tác dụng; ACK sau commit; at-least-once + dedup.')),
         ('Saga và compensation', bullets('Cancel / reject / deadline → cancelled → giải phóng tài xế.', 'Payment decline → payment_failed + ledger declined + release.', 'Tombstone xử lý cancellation trước reserve; terminal không hồi sinh.')),
         ('Demo trực tiếp · Web và lỗi phân tán', bullets('Web: chuẩn bị demo → đặt xe → đổi vai trò tài xế → hoàn tất.', 'Hai khách tranh một driver; kill/restart Payment và Broker.', 'Driver fail → retry/DLQ/redrive; decline → compensation.') + code('python scripts/start.py --open\npython scripts/demo.py --pause')),
-        ('Kết quả kiểm thử', p(f'<strong>{passed}/{results["tests"]} đạt</strong> · {results["duration_seconds"]} giây') + bullets('11 chức năng · 3 đồng thời · 6 lỗi/phục hồi.', '3 bảo mật/dữ liệu sai · 1 thực nghiệm hiệu năng.', '7 process thật, HTTP thật, kill/restart thật; JSON/log làm bằng chứng.')),
+        ('Kết quả kiểm thử', p(f'<strong>{passed}/{results["tests"]} đạt</strong> · {results["duration_seconds"]} giây') + bullets('11 chức năng · 3 đồng thời · 6 lỗi/phục hồi.', '3 bảo mật/dữ liệu sai · 1 thực nghiệm hiệu năng.', '9 process thật, HTTP thật, kill/restart thật; JSON/log làm bằng chứng.')),
         ('Hiệu năng · phạm vi đo', p(f'100 GET /trips có auth · 10 clients · localhost') + table(['Throughput', 'p50', 'p95', 'Thành công'], [(str(perf['throughput_rps'])+' req/s', str(perf['p50_ms'])+' ms', str(perf['p95_ms'])+' ms', '100/100')]) + p('Một lần chạy; chưa đo booking throughput, WAN hoặc CPU/RAM. Không suy rộng thành SLA.')),
-        ('Bảo mật và giới hạn', bullets('Hash/salt, token HMAC/TTL, role/owner; web proxy chặn internal API.', 'Chưa TLS/mTLS, rate limit/revoke, broker HA hoặc mất đĩa.', f'Web + CLI; sơ đồ/tiền mô phỏng. Docker backend: {docker_passed}/8 ca chọn lọc đạt.')),
+        ('Bảo mật và giới hạn', bullets('Hash/salt, token HMAC/TTL, role/owner; web proxy chặn internal API.', 'Chưa TLS/mTLS, rate limit/revoke, broker HA hoặc mất đĩa.', f'Web + CLI; OpenStreetMap thật, thanh toán mô phỏng. Docker backend: {docker_passed}/8 ca chọn lọc đạt.')),
         ('Bàn giao và vấn đáp', bullets('Điền thông tin nhóm, commit thật từng người, GitHub access và final tag.', 'Giải thích reserve atomic, outbox/inbox, late event, Saga và failure model.', 'Nguồn: đề bài; microservices.io Saga/Outbox/Idempotent Consumer; SQLite/Python docs. AI có hỗ trợ, nhóm chịu trách nhiệm kiểm chứng.')),
     ]
     (DOCS / 'slides.html').write_text(document(slides, slides=True), encoding='utf-8')

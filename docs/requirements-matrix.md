@@ -1,5 +1,7 @@
 # Đối chiếu yêu cầu với sản phẩm và bằng chứng
 
+**Bản cập nhật DS03 đầy đủ:** xem [ds03-audit.md](ds03-audit.md) và [advanced.md](advanced.md). Kiến trúc hiện tại có 7 business service (đã thêm Pricing), Broker, collector Observability và web gateway. Các mục bên dưới mô tả baseline ban đầu; khi số lượng/phạm vi khác nhau, ưu tiên bảng cập nhật và JSON kết quả mới.
+
 Nguồn: `C:\Bop\COURSE PROJECT SPECIFICATION.pdf`; bản trích `docs/assignment.txt`. Chỉ DS03 cùng các yêu cầu chung áp dụng, không triển khai yêu cầu DS01/02/04.
 
 | Mục đề | Yêu cầu | Triển khai / bằng chứng |

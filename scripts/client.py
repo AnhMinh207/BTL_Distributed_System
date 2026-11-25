@@ -8,7 +8,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.cluster import environment
-from src.common import Problem, call, service_url, uid
+from src.common import Problem, call, service_url, uid, PORTS
 
 
 def main():
@@ -40,7 +40,7 @@ def main():
         data = dict(username=args.username, password=password, role=args.role)
     elif command == 'status':
         results = {}
-        for name in ('broker', 'identity', 'driver', 'trip', 'matching', 'payment', 'notification'):
+        for name in PORTS:
             try:
                 results[name] = call(service_url(name) + '/health')[1]
             except Problem as e:

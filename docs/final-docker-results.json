@@ -1,0 +1,86 @@
+{
+  "project": "ds03-final-validation",
+  "healthy_containers": 12,
+  "business_services": 7,
+  "containers": [
+    {
+      "Service": "broker",
+      "Name": "ds03-final-validation-broker-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "driver",
+      "Name": "ds03-final-validation-driver-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "identity",
+      "Name": "ds03-final-validation-identity-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "matching",
+      "Name": "ds03-final-validation-matching-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "matching",
+      "Name": "ds03-final-validation-matching-2",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "matching",
+      "Name": "ds03-final-validation-matching-3",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "notification",
+      "Name": "ds03-final-validation-notification-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "observability",
+      "Name": "ds03-final-validation-observability-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "payment",
+      "Name": "ds03-final-validation-payment-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "pricing",
+      "Name": "ds03-final-validation-pricing-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "trip",
+      "Name": "ds03-final-validation-trip-1",
+      "Health": "healthy",
+      "State": "running"
+    },
+    {
+      "Service": "web",
+      "Name": "ds03-final-validation-web-1",
+      "Health": "healthy",
+      "State": "running"
+    }
+  ],
+  "matching_events_per_instance": {
+    "50fd5245c75a": 3,
+    "cb06c6375a98": 3,
+    "e6d8c2fc41fc": 6
+  },
+  "matching_replica_count": 3,
+  "scope": "Real Compose + 3 competing Matching consumers; 8 HTTP Docker scenes and browser checks reported separately"
+}

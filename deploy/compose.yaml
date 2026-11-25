@@ -8,6 +8,7 @@ x-common: &common
   environment: &env
     AUTH_SECRET: ${AUTH_SECRET:?Run python scripts/configure.py first}
     SERVICE_KEY: ${SERVICE_KEY:?Run python scripts/configure.py first}
+    OPERATIONS_KEY: ${OPERATIONS_KEY:?Run python scripts/configure.py first}
     HOST: 0.0.0.0
     DATA_DIR: /data
     BROKER_URL: http://broker:8100
@@ -17,6 +18,15 @@ x-common: &common
     MATCHING_URL: http://matching:8104
     PAYMENT_URL: http://payment:8105
     NOTIFICATION_URL: http://notification:8106
+    PRICING_URL: http://pricing:8107
+    OBSERVABILITY_URL: http://observability:8108
+    DYNAMIC_PRICING: ${DYNAMIC_PRICING:-1}
+    CIRCUIT_BREAKER: '1'
+    CIRCUIT_THRESHOLD: ${CIRCUIT_THRESHOLD:-3}
+    CIRCUIT_COOLDOWN: ${CIRCUIT_COOLDOWN:-2}
+    MATCHING_REPLICA_DATA: '1'
+    GEOCODER_URL: ${GEOCODER_URL:-https://photon.komoot.io/api/}
+    OSM_TILE_URL: ${OSM_TILE_URL:-https://tile.openstreetmap.org/{z}/{x}/{y}.png}
     MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
     LEASE_SECONDS: ${LEASE_SECONDS:-3}
     SAGA_TIMEOUT: ${SAGA_TIMEOUT:-60}
@@ -30,6 +40,22 @@ x-common: &common
     start_period: 5s
 
 services:
+  pricing:
+    <<: *common
+    command: [python, -m, src.main, pricing]
+    environment:
+      <<: *env
+      PORT: '8107'
+    ports: ['127.0.0.1:8107:8107']
+    volumes: [pricing-data:/data]
+  observability:
+    <<: *common
+    command: [python, -m, src.main, observability]
+    environment:
+      <<: *env
+      PORT: '8108'
+    ports: ['127.0.0.1:8108:8108']
+    volumes: [observability-data:/data]
   web:
     <<: *common
     command: [python, scripts/web.py, --host, 0.0.0.0, --port, '8080']
@@ -98,6 +124,8 @@ networks:
   ds03:
     driver: bridge
 volumes:
+  pricing-data:
+  observability-data:
   broker-data:
   identity-data:
   driver-data:

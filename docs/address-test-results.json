@@ -1,0 +1,15 @@
+{
+  "passed": 8,
+  "checks": [
+    "Accent-insensitive catalog search selects a real coordinate",
+    "Free-text lookup outside the catalog resolves through live Photon",
+    "Pasted latitude/longitude is selectable",
+    "An unresolved address cannot silently book with old coordinates",
+    "Local catalog remains usable when online search is offline",
+    "Keyboard selection with arrow keys and Enter works",
+    "Address suggestions fit a 390px mobile screen",
+    "No uncaught JavaScript errors"
+  ],
+  "live_provider": "Photon / OpenStreetMap",
+  "live_query": "Louvre Paris"
+}

@@ -1,0 +1,11 @@
+{
+  "passed": 6,
+  "checks": [
+    "Reject invalid operations key",
+    "Accept valid key without displaying it",
+    "Nine service metrics rows",
+    "Trace detail loads",
+    "Central logs visible",
+    "Disconnect clears view; no JS errors"
+  ]
+}

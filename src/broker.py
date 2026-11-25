@@ -90,8 +90,11 @@ class Broker(Service):
                 require(row['state'] == 'inflight' and row['receipt'] == body.get('receipt') and row['lease'] >= now,
                         409, 'Stale delivery receipt')
                 state = 'done' if action == 'ack' else ('dead' if row['attempts'] >= maximum else 'pending')
+                delay=min(8,.2*2**row['attempts'])
+                if 'circuit open' in str(body.get('error','')).lower():
+                    delay=max(delay,float(os.getenv('CIRCUIT_COOLDOWN','2'))+.1)
                 db.execute('UPDATE deliveries SET state=?,available=?,error=? WHERE queue=? AND event_id=?',
-                           (state, now + min(8, .2 * 2 ** row['attempts']), str(body.get('error', ''))[:500],
+                           (state, now + delay, str(body.get('error', ''))[:500],
                             queue, event_id))
                 log('broker', 'delivery.' + state, corr, queue=queue, event_id=event_id, result=state)
                 return {'state': state}

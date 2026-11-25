@@ -1,8 +1,10 @@
 # DS03 — Hệ thống gọi xe microservices mô phỏng Grab/Uber
 
-Triển khai theo mục 4, 7, 9–13 của **COURSE PROJECT SPECIFICATION.pdf**. Có **6 microservice nghiệp vụ**, **1 message broker bền vững**, giao tiếp HTTP/REST và hàng đợi bất đồng bộ. Mỗi tiến trình sở hữu một SQLite riêng; không dịch vụ nào đọc database của dịch vụ khác.
+Triển khai theo mục 4, 7, 9–13 của **COURSE PROJECT SPECIFICATION.pdf**. Có **7 microservice nghiệp vụ** (đã thêm Pricing), **message broker bền vững**, **collector log/trace** và **web API Gateway**. Mỗi backend có SQLite riêng; không dịch vụ nào đọc database của dịch vụ khác.
 
-Đây là prototype phục vụ học phần, có **giao diện web tiếng Việt cho hành khách và tài xế**, kèm CLI. Thanh toán và tọa độ được mô phỏng, không gọi cổng thanh toán hay bản đồ thương mại. Message broker tự triển khai để có thể kiểm chứng trực tiếp enqueue, lease, ACK, retry và DLQ; không cần cài RabbitMQ hoặc thư viện Python bên ngoài.
+Đối chiếu đầy đủ từng yêu cầu 7.1–7.5: [docs/ds03-audit.md](docs/ds03-audit.md). Hướng dẫn circuit breaker, giá động, tracing, dashboard và scale Matching: [docs/advanced.md](docs/advanced.md).
+
+Đây là prototype phục vụ học phần, có **giao diện web tiếng Việt cho hành khách và tài xế**, kèm CLI. Thanh toán được mô phỏng. Bản đồ dùng **OpenStreetMap thật + Leaflet**, không cần API key hay liên kết thẻ; tọa độ driver demo vẫn được mô phỏng. Message broker tự triển khai để có thể kiểm chứng trực tiếp enqueue, lease, ACK, retry và DLQ; không cần cài RabbitMQ hoặc thư viện Python bên ngoài.
 
 ## Mở ứng dụng web — bắt đầu tại đây
 
@@ -16,16 +18,18 @@ python scripts/start.py --open
 
 Để xem ngay một chuyến xe trực quan:
 
-1. Mở **http://127.0.0.1:8080**, nhấn **Chuẩn bị demo**. Hệ thống tạo hai tài khoản thật và đưa tài xế vào trạng thái nhận chuyến.
+1. Mở **http://127.0.0.1:8080**, chọn **Demo → Chuẩn bị demo** ở góc trên. Hệ thống tạo hai tài khoản thật và đưa tài xế vào trạng thái nhận chuyến.
 2. Ở vai trò **Hành khách**, chọn điểm đón/đến rồi nhấn **Đặt xe ngay**.
 3. Chuyển sang **Tài xế** bằng nút phía trên. Nhấn **Chấp nhận chuyến → Đã đón khách · Bắt đầu → Hoàn thành chuyến**.
 4. Chuyển lại **Hành khách**, xem trạng thái hoàn tất, **Lịch sử chuyến**, **Thanh toán** và **Thông báo**.
 
-Cũng có thể nhấn mũi tên ở thẻ **Xem một chuyến đi trọn vẹn** để tự động chạy cả luồng, với tiến độ từng bước hiển thị trên trang. Demo này gọi API thật, không dùng dữ liệu kết quả viết sẵn.
+Cũng có thể chọn **Demo → Chạy chuyến mẫu** để tự động chạy cả luồng, với tiến độ từng bước hiển thị trên trang. Demo này gọi API thật, không dùng dữ liệu kết quả viết sẵn. Nút **Đăng nhập** mở hộp thoại tài khoản; màn hình chính ưu tiên bản đồ và thao tác đặt xe.
 
 Bạn có thể tự đăng ký tài khoản với hai vai trò hoặc mở hai tab/cửa sổ cho hai người dùng độc lập. Tài xế phải **Bắt đầu nhận chuyến**, ở gần điểm đón và xác nhận đề nghị thì hành trình mới tiếp tục. Nếu không có tài xế, yêu cầu sẽ kết thúc ở trạng thái đã hủy.
 
-Web dùng sơ đồ SVG minh họa tương ứng tọa độ; chưa dùng bản đồ đường bộ, chỉ đường hoặc ETA thực. Giá, ghép tài xế, vòng đời, thanh toán và thông báo do các dịch vụ xử lý. Tài liệu giao diện: [docs/web.md](docs/web.md).
+**Nhập địa chỉ bất kỳ:** gõ vào ô điểm đón/điểm đến rồi chọn kết quả gợi ý từ Photon/OpenStreetMap. Danh mục hơn 40 địa điểm vẫn dùng được khi tìm kiếm trực tuyến mất kết nối. Thêm quận/thành phố để tìm chính xác hơn; có thể nhập tọa độ trực tiếp. Chỉ địa chỉ đã chọn/xác nhận mới được dùng để đặt xe.
+
+**Chọn vị trí trên bản đồ thật:** nhấn **Chọn trên bản đồ** ở ô điểm đón/điểm đến, sau đó bấm vào đường phố hoặc kéo ghim **A/B** để điều chỉnh. Có thể phóng to/thu nhỏ, kéo bản đồ và căn lại các vị trí. Bản đồ tự tải OpenStreetMap khi có Internet; không cần Google Cloud hoặc API key. Leaflet 1.9.4 được lưu kèm giấy phép trong source. Chưa có chỉ đường/ETA; giá vẫn theo Haversine. Bằng chứng tải tile/click/kéo thật: `docs/osm-map-results.json`. Tài liệu: [docs/web.md](docs/web.md).
 
 ## Kiến trúc
 
@@ -37,6 +41,11 @@ flowchart LR
     Web --> T[Trip :8103]
     Web --> P[Payment :8105]
     Web --> N[Notification :8106]
+    Web --> Price[Pricing :8107]
+    T -->|quote REST| Price
+    Price -->|supply REST| D
+    Price -->|demand REST| T
+    Web --> Ops[Observability :8108]
     CLI[CLI hành khách / tài xế] --> I
     CLI --> D[Driver :8102]
     CLI --> T[Trip :8103]
@@ -59,15 +68,17 @@ flowchart LR
 | Driver | drivers, reservations | Vị trí, hiện diện, giữ/giải phóng tài xế nguyên tử |
 | Trip | trips, requests | Vòng đời, fare VND, version, idempotency, deadline Saga |
 | Matching | matches | Chọn tài xế qua REST tới Driver, phát kết quả bất đồng bộ |
+| Pricing | quotes | Báo giá bền/idempotent, hệ số theo cung/cầu, không đọc DB chéo |
 | Payment | payments | Sổ thanh toán mô phỏng, tối đa một bản ghi/chuyến |
 | Notification | notifications | Thông báo riêng cho hành khách và tài xế |
 | Broker | events, deliveries | Fan-out queue, lưu bền, lease/ACK, retry, DLQ, redrive |
+| Observability | records | Log/span tập trung, parent-child trace, phát hiện instance bằng heartbeat |
 
-Mỗi dịch vụ còn có `inbox` và `outbox` cục bộ. UUID xác định user, trip và event; tên dịch vụ và URL môi trường là cơ chế discovery. Docker Compose dùng DNS tên service. Không có API Gateway và không tính broker vào số microservice nghiệp vụ.
+Business service có `inbox`/`outbox` cục bộ khi xử lý event. UUID xác định user, trip và event; discovery dùng URL môi trường và DNS Docker. Web là API Gateway có allowlist và forwarding token; web, broker và collector không tính vào 7 business service. Dashboard quản trị yêu cầu OPERATIONS_KEY riêng.
 
 ## Chạy backend và CLI riêng trên Windows / Linux / macOS
 
-Yêu cầu: **Python 3.11+** (đã kiểm thử bằng Python 3.13), các cổng 8100–8106 trống. Không cần `pip install`.
+Yêu cầu: **Python 3.11+** (đã kiểm thử bằng Python 3.13), các cổng 8100–8108 trống; web tại 8080. Không cần `pip install`.
 
 ```powershell
 python scripts/configure.py
@@ -112,7 +123,7 @@ Version ví dụ trên áp dụng khi chưa có thao tác khác. Nếu gặp 409
 
 ## Khởi động độc lập từng dịch vụ
 
-`cluster.py` tạo **7 tiến trình OS** và ghi PID, không gom các dịch vụ vào một tiến trình. Có thể chạy từng dịch vụ trong terminal riêng; launcher tự đọc `.env`:
+`cluster.py` tạo **9 tiến trình OS** và ghi PID, không gom các dịch vụ vào một tiến trình. Có thể chạy từng dịch vụ trong terminal riêng; launcher tự đọc `.env`:
 
 ```powershell
 python scripts/cluster.py --services broker
@@ -122,9 +133,11 @@ python scripts/cluster.py --services trip
 python scripts/cluster.py --services matching
 python scripts/cluster.py --services payment
 python scripts/cluster.py --services notification
+python scripts/cluster.py --services pricing
+python scripts/cluster.py --services observability
 ```
 
-Các dòng trên dành cho **7 terminal riêng**, không chạy đồng thời với cluster toàn bộ trên cùng cổng. Có thể dùng `python -m src.main trip` khi đã export các biến môi trường. `HOST`, `PORT`, `DATA_DIR` và các `<SERVICE>_URL` cho phép phân phối các dịch vụ trên nhiều máy LAN; chỉ chia sẻ secret qua kênh riêng, cấu hình firewall phù hợp.
+Các dòng trên dành cho **9 terminal riêng**, không chạy đồng thời với cluster toàn bộ trên cùng cổng. Có thể dùng `python -m src.main trip` khi đã export các biến môi trường. `HOST`, `PORT`, `DATA_DIR` và các `<SERVICE>_URL` cho phép phân phối các dịch vụ trên nhiều máy LAN; chỉ chia sẻ secret qua kênh riêng, cấu hình firewall phù hợp.
 
 ## Docker Compose và tái triển khai
 
@@ -162,13 +175,19 @@ Không thêm `-v` vào `down` khi cần giữ dữ liệu. Sao lưu riêng từn
 
 ```powershell
 python scripts/test.py
+python tests/test_advanced.py
 python tests/test_web.py
 python scripts/demo.py --pause
+python scripts/advanced_demo.py --pause
 ```
 
-`tests/test_web.py` chạy thêm 6 bài qua web proxy thật tại cổng 9180: static assets/security headers, chặn API nội bộ, chặn origin lạ, full booking/payment/notification, health aggregate và auth/size limits. Kết quả riêng ở `docs/web-test-results.json`. Kiểm tra trình duyệt tùy chọn: cài Playwright vào `runtime/browser-qa` rồi chạy `node scripts/browser_qa.cjs`; ứng dụng không cần Playwright để chạy.
+Kiến trúc hiện tại chạy 9 backend + gateway (10 container mặc định). Scale Matching lên 3 replica bằng `docker compose --env-file .env -f deploy/compose.yaml -f deploy/scale.yaml up --build -d` (12 container). Mỗi Matching replica có DB riêng, cùng claim queue; không chia sẻ file để truyền thông. Bằng chứng scale process: `docs/scaling-results.json`.
 
-Bộ kiểm thử chạy 7 tiến trình thật trên **9100–9106**, tự tạo secret và database riêng, tự dừng tiến trình khi kết thúc. Không cần khởi chạy cluster trước. Các file `docs/test-results.json` và `docs/performance.json` được tạo từ lần chạy thực. Logs chi tiết ở `runtime/test-<UUID>/logs/`. Thư mục runtime không được commit vì chứa dữ liệu thử nghiệm.
+Mở **Hệ thống → Giám sát vận hành**, nhập OPERATIONS_KEY trong `.env` của mình để xem outbox/inbox, circuits, queue/DLQ, logs và trace theo Correlation ID. Key nhập không được lưu trong browser storage. `scripts/configure.py` bổ sung key này cho cấu hình cũ mà không thay secret khác.
+
+`tests/test_web.py` chạy 9 bài qua web proxy thật tại cổng 9180, gồm static assets/security, chặn route nội bộ/origin lạ, full booking, health, auth/size limits, validation địa chỉ, cấu hình map không lộ secret và quyền dashboard. Kết quả riêng ở `docs/web-test-results.json`. Kiểm tra trình duyệt tùy chọn: cài Playwright vào `runtime/browser-qa` rồi chạy `node scripts/browser_qa.cjs`; ứng dụng không cần Playwright để chạy.
+
+Bộ kiểm thử chạy 9 tiến trình thật trên **9100–9108**, tự tạo secret và database riêng, tự dừng tiến trình khi kết thúc. Không cần khởi chạy cluster trước. Các file `docs/test-results.json` và `docs/performance.json` được tạo từ lần chạy thực. Logs chi tiết ở `runtime/test-<UUID>/logs/`. Thư mục runtime không được commit vì chứa dữ liệu thử nghiệm.
 
 Demo có 6 cảnh: vòng đời bình thường; hai khách tranh một tài xế; kill/restart Payment; kill/restart Broker; Driver chết dẫn tới retry/DLQ rồi redrive; thanh toán bị từ chối và Saga giải phóng tài xế. `--pause` dừng giữa các cảnh để trình bày. Chạy không có `--pause` để kiểm chứng tự động. [Kịch bản trình bày](docs/demo.md) giải thích bằng chứng cần mở.
 

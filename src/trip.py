@@ -4,7 +4,7 @@ import os
 import re
 import time
 
-from .common import Service, Problem, require, actor, coordinates, distance, uid, log
+from .common import Service, Problem, require, actor, coordinates, distance, uid, log, internal, call, service_url, internal_headers
 
 TERMINAL = {'completed', 'cancelled', 'payment_failed'}
 
@@ -46,6 +46,12 @@ class Trip(Service):
         return self.view(updated)
 
     def dispatch(self, method, path, body, headers, corr):
+        if path=='/internal/demand' and method=='POST':
+            internal(headers)
+            pickup=coordinates(body,'pickup')
+            with self.db.connect() as db:
+                rows=db.execute("SELECT pickup FROM trips WHERE state IN ('requested','offered') AND created>?",(time.time()-120,)).fetchall()
+            return {'waiting':sum(distance(pickup,json.loads(r['pickup']))<=20 for r in rows)}
         user = actor(headers)
         if path == '/trips' and method == 'POST':
             require(user['role'] == 'passenger', 403, 'Passenger role required')
@@ -56,6 +62,15 @@ class Trip(Service):
             require(re.fullmatch(r'[A-Za-z0-9._-]{8,128}', key), 400, 'Idempotency-Key required (8-128 chars)')
             normalized = dict(pickup=pickup, destination=destination, payment_mode=mode)
             fingerprint = hashlib.sha256(json.dumps(normalized, sort_keys=True).encode()).hexdigest()
+            # Replays must not depend on Pricing availability. No RPC under a DB write lock.
+            with self.db.connect() as db:
+                old=db.execute('SELECT * FROM requests WHERE passenger_id=? AND key=?',(user['sub'],key)).fetchone()
+                if old:
+                    require(old['fingerprint']==fingerprint,409,'Idempotency key reused with different request')
+                    return self.view(db.execute('SELECT * FROM trips WHERE id=?',(old['trip_id'],)).fetchone())
+            _,quote=call(service_url('pricing')+'/internal/quote','POST',
+                         dict(pickup=pickup,destination=destination,quote_key=user['sub']+'.'+key),
+                         {**internal_headers(),'X-Correlation-ID':corr})
             with self.db.tx() as db:
                 old = db.execute('SELECT * FROM requests WHERE passenger_id=? AND key=?',
                                  (user['sub'], key)).fetchone()
@@ -66,7 +81,7 @@ class Trip(Service):
                                        "('completed','cancelled','payment_failed')", (user['sub'],)).fetchone(),
                         409, 'Passenger already has active trip')
                 trip_id = uid()
-                fare = 12000 + round(distance(pickup, destination) * 8000)
+                fare = quote['fare']
                 now = time.time()
                 db.execute('INSERT INTO trips VALUES(?,?,NULL,?,?,?,?,?,1,?,?,?,?)',
                            (trip_id, user['sub'], 'requested', json.dumps(pickup), json.dumps(destination),

@@ -1,0 +1,15 @@
+{
+  "tests": 6,
+  "failures": 0,
+  "errors": 0,
+  "seconds": 27.995,
+  "scenarios": [
+    "test_A01_circuit_open_half_open_and_recovery",
+    "test_A02_dynamic_pricing_and_idempotent_quote",
+    "test_A03_central_logs_and_parent_child_trace",
+    "test_A04_two_matching_replicas_and_crash_recovery",
+    "test_A05_pricing_restart_and_no_duplicate_booking",
+    "test_A06_geospatial_selects_nearest_driver"
+  ],
+  "run_directory": "C:\\Bop\\BTL_Distributed_System\\runtime\\test-cea9e885-448a-4ffa-89e5-929876f4ca47"
+}

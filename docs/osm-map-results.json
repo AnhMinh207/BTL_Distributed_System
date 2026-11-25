@@ -1,0 +1,16 @@
+{
+  "passed": 8,
+  "checks": [
+    "Real OpenStreetMap street tiles load successfully",
+    "Visible OpenStreetMap attribution is retained",
+    "Pointer click fills pickup with real geographic coordinates",
+    "Dragging pickup marker updates coordinates",
+    "Background polling does not reset the viewport",
+    "Mobile map resizes without horizontal overflow",
+    "Active-trip marker dragging is locked and cancellation still works",
+    "No Google API calls and no uncaught JavaScript errors"
+  ],
+  "real_tiles_loaded": 12,
+  "provider": "OpenStreetMap / Leaflet 1.9.4",
+  "api_key_required": false
+}

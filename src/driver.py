@@ -39,6 +39,11 @@ class Driver(Service):
             result['location'] = json.loads(result['location'])
             return result
         internal(headers)
+        if path == '/internal/supply' and method == 'POST':
+            pickup=coordinates(body,'pickup')
+            with self.db.connect() as db:
+                rows=db.execute("SELECT location,updated FROM drivers WHERE status='available' AND active_trip IS NULL").fetchall()
+            return {'available':sum(time.time()-r['updated']<300 and distance(pickup,json.loads(r['location']))<=20 for r in rows)}
         if path == '/internal/reserve' and method == 'POST':
             trip = text_field(body, 'trip_id')
             pickup = coordinates(body, 'pickup')

@@ -1,0 +1,28 @@
+{
+  "checks": [
+    {
+      "width": 390,
+      "overflow": false,
+      "primary_button_font": 17,
+      "login_dialog": "passed"
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "primary_button_font": 17,
+      "login_dialog": "passed"
+    },
+    {
+      "width": 1024,
+      "overflow": false,
+      "primary_button_font": 17,
+      "login_dialog": "passed"
+    },
+    {
+      "width": 1440,
+      "overflow": false,
+      "primary_button_font": 17,
+      "login_dialog": "passed"
+    }
+  ]
+}

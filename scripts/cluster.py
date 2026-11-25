@@ -22,6 +22,8 @@ def environment():
                 key, value = line.split('=', 1)
                 env.setdefault(key, value)
     env['PYTHONUNBUFFERED'] = '1'
+    env.setdefault('OBSERVABILITY_URL','http://127.0.0.1:8108')
+    env.setdefault('PRICING_URL','http://127.0.0.1:8107')
     return env
 
 

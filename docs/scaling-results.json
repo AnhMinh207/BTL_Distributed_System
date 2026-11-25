@@ -1,0 +1,9 @@
+{
+  "replicas": 2,
+  "processed_per_instance": {
+    "matching-a": 7,
+    "matching-b": 5
+  },
+  "survivor_continued_after_peer_kill": true,
+  "database_isolation": "separate instance namespaces; communication through broker only"
+}

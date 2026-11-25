@@ -56,7 +56,7 @@ class WebTests(unittest.TestCase):
         self.fail('Trip did not reach '+expected)
 
     def test_W01_static_assets_and_security_headers(self):
-        for path,mime in [('/','text/html'),('/app.js','text/javascript'),('/styles.css','text/css'),('/favicon.svg','image/svg+xml')]:
+        for path,mime in [('/','text/html'),('/app.js','text/javascript'),('/osm-map.js','text/javascript'),('/vendor/leaflet/leaflet.js','text/javascript'),('/vendor/leaflet/leaflet.css','text/css'),('/styles.css','text/css'),('/places.css','text/css'),('/favicon.svg','image/svg+xml')]:
             with urlopen(self.url+path,timeout=2) as response:
                 self.assertEqual(200,response.status)
                 self.assertIn(mime,response.headers['Content-Type'])
@@ -102,7 +102,7 @@ class WebTests(unittest.TestCase):
 
     def test_W05_health_aggregate(self):
         status=call(self.url+'/api/status')[1]['services']
-        self.assertEqual(7,len(status))
+        self.assertEqual(9,len(status))
         self.assertTrue(all(s['status']=='up' for s in status.values()))
 
     def test_W06_proxy_preserves_authentication_and_limits(self):
@@ -110,6 +110,31 @@ class WebTests(unittest.TestCase):
         self.assertEqual(401,caught.exception.status)
         with self.assertRaises(Problem) as caught:self.request('identity','/login','POST',{'padding':'x'*66000})
         self.assertEqual(413,caught.exception.status)
+
+    def test_W07_invalid_geocoding_query(self):
+        for query in ['', '?q=x', '?q=address&lat=nan', '?q=address&lon=181']:
+            with self.assertRaises(Problem) as caught:
+                call(self.url+'/api/places/search'+query)
+            self.assertEqual(400, caught.exception.status)
+
+    def test_W08_maps_configuration_does_not_expose_service_secrets(self):
+        result=call(self.url+'/api/maps/config')[1]
+        self.assertEqual({'provider','tileUrl'},set(result))
+        self.assertEqual('OpenStreetMap',result['provider'])
+        encoded=json.dumps(result)
+        self.assertNotIn(SystemTests.env['AUTH_SECRET'],encoded)
+        self.assertNotIn(SystemTests.env['SERVICE_KEY'],encoded)
+
+    def test_W09_operations_access_and_backend_aggregation(self):
+        with self.assertRaises(Problem) as caught:
+            call(self.url+'/api/operations/overview')
+        self.assertEqual(403,caught.exception.status)
+        _,overview=call(self.url+'/api/operations/overview',headers={'X-Operations-Key':SystemTests.env['OPERATIONS_KEY']})
+        self.assertEqual(9,len(overview['services']))
+        self.assertIn('queues',overview)
+        with self.assertRaises(Problem) as caught:
+            call(self.url+'/api/operations/overview',headers={'X-Operations-Key':SystemTests.env['SERVICE_KEY']})
+        self.assertEqual(403,caught.exception.status)
 
 
 if __name__=='__main__':

@@ -3,6 +3,7 @@
 No business database access, no service key forwarded, no privileged broker API.
 """
 import argparse
+import hmac
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
@@ -10,16 +11,33 @@ from pathlib import Path
 import re
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.cluster import environment
 from src.common import MAX_BODY, PORTS, Problem, call, log, require, service_url, uid
+from src.common import internal_headers
+from scripts.geocoding import Geocoder
+
+GEOCODER = Geocoder()
 
 ASSETS = {'/': ('index.html', 'text/html'), '/index.html': ('index.html', 'text/html'),
           '/app.js': ('app.js', 'text/javascript'), '/styles.css': ('styles.css', 'text/css'),
-          '/favicon.svg': ('favicon.svg', 'image/svg+xml')}
+          '/favicon.svg': ('favicon.svg', 'image/svg+xml'), '/places.css': ('places.css', 'text/css')}
+ASSETS['/osm-map.js'] = ('osm-map.js', 'text/javascript')
+ASSETS['/operations.js'] = ('operations.js', 'text/javascript')
+for filename, mime in [('leaflet.js', 'text/javascript'), ('leaflet.css', 'text/css'), ('LICENSE', 'text/plain')]:
+    ASSETS['/vendor/leaflet/' + filename] = ('vendor/leaflet/' + filename, mime)
+
+
+def map_config():
+    tile_url = os.getenv('OSM_TILE_URL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png')
+    parsed = urlsplit(tile_url)
+    require(parsed.scheme == 'https' and parsed.hostname and
+            re.fullmatch(r'[A-Za-z0-9.-]+', parsed.netloc) and not parsed.username and
+            all(token in tile_url for token in ('{z}', '{x}', '{y}')), 503, 'Invalid map tile configuration')
+    return {'provider': 'OpenStreetMap', 'tileUrl': tile_url}
 ROUTES = {
     'identity': [('POST', r'/register'), ('POST', r'/login')],
     'driver': [('GET', r'/drivers/me'), ('POST', r'/drivers/me')],
@@ -27,6 +45,7 @@ ROUTES = {
              ('POST', r'/trips/[a-zA-Z0-9-]+/(accept|reject|start|complete|cancel)')],
     'payment': [('GET', r'/payments')],
     'notification': [('GET', r'/notifications')],
+    'pricing': [('POST', r'/quote')],
 }
 
 
@@ -53,14 +72,46 @@ class Handler(BaseHTTPRequestHandler):
                 result = (ROOT / 'src' / 'web' / filename).read_bytes()
             elif self.command == 'GET' and path == '/health':
                 result = {'service': 'web', 'status': 'up'}
+            elif self.command == 'GET' and path == '/api/maps/config':
+                result = map_config()
+            elif self.command == 'GET' and path == '/api/places/search':
+                require(len(self.path) <= 2000, 400, 'Address query too long')
+                params = parse_qs(urlsplit(self.path).query)
+                result = GEOCODER.search(params.get('q', [''])[0],
+                                         params.get('lat', ['10.7769'])[0], params.get('lon', ['106.7009'])[0])
             elif self.command == 'GET' and path == '/api/status':
                 def health(name):
                     try:
                         return name, call(service_url(name) + '/health', timeout=1)[1]
                     except Problem:
                         return name, {'service': name, 'status': 'down'}
-                with ThreadPoolExecutor(max_workers=7) as pool:
+                with ThreadPoolExecutor(max_workers=len(PORTS)) as pool:
                     result = {'services': dict(pool.map(health, PORTS))}
+            elif self.command=='GET' and path.startswith('/api/operations/'):
+                operator_key=os.getenv('OPERATIONS_KEY','')
+                require(len(operator_key)>=32 and hmac.compare_digest(self.headers.get('X-Operations-Key',''),operator_key),403,'Operations access required')
+                route=path.removeprefix('/api/operations')
+                if route=='/overview':
+                    def inspect(name):
+                        try:
+                            return name,call(service_url(name)+'/internal/metrics',headers=internal_headers(),timeout=1)[1]
+                        except Problem:
+                            return name,{'service':name,'status':'down'}
+                    with ThreadPoolExecutor(max_workers=len(PORTS)) as pool:
+                        result={'services':dict(pool.map(inspect,PORTS))}
+                    for field,endpoint in [('queues','/stats'),('dead_letters','/dead-letters')]:
+                        try:
+                            result[field]=call(service_url('broker')+endpoint,headers=internal_headers())[1]
+                        except Problem:
+                            result[field]={'unavailable':True}
+                    try:
+                        result['instances']=call(service_url('observability')+'/instances',headers=internal_headers())[1]['instances']
+                    except Problem:
+                        result['instances']=[]
+                elif route in ('/logs','/traces') or re.fullmatch(r'/traces/[A-Za-z0-9._-]{1,128}',route):
+                    result=call(service_url('observability')+route,headers=internal_headers())[1]
+                else:
+                    raise Problem(404,'Route not found')
             else:
                 parts = path.split('/', 3)
                 require(len(parts) == 4 and parts[1] == 'api', 404, 'Route not found')
@@ -98,9 +149,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('X-Frame-Options', 'DENY')
-        self.send_header('Referrer-Policy', 'no-referrer')
+        self.send_header('Referrer-Policy', 'strict-origin-when-cross-origin')
         self.send_header('X-Correlation-ID', correlation)
-        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        tile_origin = 'https://tile.openstreetmap.org'
+        try:
+            tile_origin = 'https://' + urlsplit(map_config()['tileUrl']).netloc
+        except Problem:
+            pass
+        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: " + tile_origin + "; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         self.end_headers()
         try:
             self.wfile.write(result)
@@ -112,6 +168,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     os.environ.update(environment())
+    os.environ['SERVICE_NAME']='web'
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=int(os.getenv('WEB_PORT', '8080')))
     parser.add_argument('--host', default=os.getenv('WEB_HOST', '127.0.0.1'))

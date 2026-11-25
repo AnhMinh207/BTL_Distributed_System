@@ -31,6 +31,47 @@ const places = [
   ['Nhà thờ Đức Bà',10.7798,106.6990], ['Phố đi bộ Nguyễn Huệ',10.7769,106.7009],
   ['Thảo Cầm Viên',10.7900,106.7200], ['Chợ Bến Thành',10.7725,106.6980],
   ['Dinh Độc Lập',10.7770,106.6953], ['Bến Bạch Đằng',10.7765,106.7068],
+  ['Sân bay Tân Sơn Nhất, TP. Hồ Chí Minh',10.8130,106.6625],
+  ['Ga Sài Gòn, TP. Hồ Chí Minh',10.7824,106.6775],
+  ['Bến xe Miền Đông mới, TP. Thủ Đức',10.8796,106.8156],
+  ['Bến xe Miền Tây, TP. Hồ Chí Minh',10.7408,106.6187],
+  ['Landmark 81, Bình Thạnh, TP. Hồ Chí Minh',10.7950,106.7219],
+  ['Bitexco Financial Tower, TP. Hồ Chí Minh',10.7717,106.7044],
+  ['Bưu điện Trung tâm, TP. Hồ Chí Minh',10.7799,106.6999],
+  ['Nhà hát Thành phố, TP. Hồ Chí Minh',10.7768,106.7031],
+  ['Bảo tàng Chứng tích Chiến tranh, TP. Hồ Chí Minh',10.7795,106.6921],
+  ['Công viên Tao Đàn, TP. Hồ Chí Minh',10.7758,106.6867],
+  ['Công viên Lê Văn Tám, TP. Hồ Chí Minh',10.7882,106.6934],
+  ['Công viên Gia Định, TP. Hồ Chí Minh',10.8117,106.6749],
+  ['AEON Mall Tân Phú, TP. Hồ Chí Minh',10.8014,106.6177],
+  ['AEON Mall Bình Tân, TP. Hồ Chí Minh',10.7424,106.6113],
+  ['Crescent Mall, Quận 7, TP. Hồ Chí Minh',10.7284,106.7182],
+  ['SC VivoCity, Quận 7, TP. Hồ Chí Minh',10.7297,106.7032],
+  ['Đại học Bách khoa, TP. Hồ Chí Minh',10.7734,106.6606],
+  ['Đại học Khoa học Tự nhiên, TP. Hồ Chí Minh',10.7629,106.6822],
+  ['Đại học Sư phạm Kỹ thuật, TP. Thủ Đức',10.8506,106.7719],
+  ['Bệnh viện Chợ Rẫy, TP. Hồ Chí Minh',10.7579,106.6595],
+  ['Bệnh viện Đại học Y Dược, TP. Hồ Chí Minh',10.7555,106.6648],
+  ['Bệnh viện Nhân dân 115, TP. Hồ Chí Minh',10.7747,106.6678],
+  ['Hồ Hoàn Kiếm, Hà Nội',21.0287,105.8523],
+  ['Nhà hát Lớn, Hà Nội',21.0242,105.8577],
+  ['Văn Miếu Quốc Tử Giám, Hà Nội',21.0276,105.8355],
+  ['Lăng Chủ tịch Hồ Chí Minh, Hà Nội',21.0369,105.8347],
+  ['Hồ Tây, Hà Nội',21.0584,105.8229],
+  ['Sân bay Nội Bài, Hà Nội',21.2187,105.8042],
+  ['Ga Hà Nội',21.0251,105.8413],
+  ['Đại học Bách khoa Hà Nội',21.0070,105.8431],
+  ['Bến xe Mỹ Đình, Hà Nội',21.0282,105.7788],
+  ['Cầu Rồng, Đà Nẵng',16.0611,108.2274],
+  ['Sân bay Đà Nẵng',16.0439,108.1993],
+  ['Biển Mỹ Khê, Đà Nẵng',16.0544,108.2470],
+  ['Chợ Hàn, Đà Nẵng',16.0678,108.2240],
+  ['Phố cổ Hội An, Quảng Nam',15.8770,108.3280],
+  ['Đại Nội Huế',16.4698,107.5770],
+  ['Chợ Đầm, Nha Trang',12.2548,109.1885],
+  ['Chợ Đà Lạt',11.9424,108.4370],
+  ['Bến Ninh Kiều, Cần Thơ',10.0320,105.7897],
+  ['Bãi Sau, Vũng Tàu',10.3407,107.0920],
   ['Tọa độ tùy chọn',null,null]
 ];
 const state = {sessions:{},role:'passenger',view:'ride',trips:[],payments:[],notices:[],driver:null,
@@ -92,6 +133,102 @@ async function api(service, path, method = 'GET', data = undefined, user = sessi
 }
 function coords(kind) { return [Number($(`#${kind}-lat`).value),Number($(`#${kind}-lon`).value)]; }
 function setCoords(kind, point) { $(`#${kind}-lat`).value = point[0].toFixed(5); $(`#${kind}-lon`).value = point[1].toFixed(5); }
+const addressFields={};
+const normalizeSearch=value=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
+function chooseAddress(kind,place){
+  const field=addressFields[kind];
+  if(!field||!validPoint(place.location))return;
+  field.seq++;clearTimeout(field.timer);if(field.controller)field.controller.abort();
+  field.selected=true;field.input.value=place.name;field.input.setCustomValidity('');
+  field.caption.textContent=place.address||place.location.map(n=>n.toFixed(5)).join(', ');
+  field.caption.title=field.caption.textContent;
+  if(kind==='pickup'){
+    const area=place.area||['TP. Hồ Chí Minh','Hà Nội','Đà Nẵng','Cần Thơ','Nha Trang','Đà Lạt','Huế','Hội An','Vũng Tàu'].find(city=>place.name.includes(city))||
+      (place.name.includes('demo')||places.slice(0,6).some(p=>p[0]===place.name)?'TP. Hồ Chí Minh':'Vị trí đã chọn');
+    $('#service-area-label').textContent=area;$('#booking-area-label').textContent=area;
+  }
+  setCoords(kind,place.location);field.results.hidden=true;field.input.setAttribute('aria-expanded','false');
+  $(`#${kind}-place`).value=String(places.length-1);estimate();renderBookingButton();
+}
+function setupAddressSearch(kind){
+  const select=$(`#${kind}-place`),container=select.closest('.location-field');select.hidden=true;
+  const input=document.createElement('input');input.type='text';input.id=kind+'-address';input.className='address-input';
+  input.placeholder=kind==='pickup'?'Nhập điểm đón':'Nhập địa chỉ hoặc nơi bạn muốn đến';
+  input.autocomplete='off';input.maxLength=160;input.required=true;
+  input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');input.setAttribute('aria-expanded','false');
+  input.setAttribute('aria-label',kind==='pickup'?'Tìm địa chỉ điểm đón':'Tìm địa chỉ điểm đến');
+  const caption=document.createElement('p');caption.className='address-caption';
+  const results=document.createElement('div');results.className='address-results';results.id=kind+'-results';results.hidden=true;
+  input.setAttribute('aria-controls',kind+'-options');
+  select.before(input);container.querySelector('.coordinate-details').before(caption,results);
+  const field={input,caption,results,selected:true,seq:0,timer:null,controller:null,options:[],active:-1};addressFields[kind]=field;
+  const catalog=query=>{
+    const words=normalizeSearch(query).trim().split(/\s+/).filter(Boolean);
+    return places.filter(p=>p[1]!==null&&words.every(w=>normalizeSearch(p[0]).includes(w))).slice(0,8)
+      .map(p=>({name:p[0],location:[p[1],p[2]],address:'Địa điểm có sẵn · Vị trí tham khảo',source:'catalog'}));
+  };
+  const show=(options,message)=>{
+    field.options=options;field.active=-1;
+    results.innerHTML=`<div class="address-result-heading">${esc(message)}</div><div id="${kind}-options" role="listbox" aria-label="Địa điểm gợi ý">${options.map((p,i)=>`<button type="button" class="address-option" role="option" id="${kind}-option-${i}" aria-selected="false" data-address-index="${i}"><span class="address-result-icon">${icon('pin')}</span><span><strong>${esc(p.name)}</strong><small>${esc(p.address)}</small></span></button>`).join('')}</div><button type="button" class="address-search-more">Tìm địa chỉ trên bản đồ</button><div class="address-attribution">Tìm kiếm: Photon · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a></div>`;
+    results.hidden=document.activeElement!==input;input.setAttribute('aria-expanded',String(!results.hidden));input.removeAttribute('aria-activedescendant');
+  };
+  const search=async()=>{
+    const query=input.value.trim();if(query.length<3||field.selected)return;
+    const seq=++field.seq;const local=catalog(query);
+    if(field.controller)field.controller.abort();field.controller=new AbortController();
+    const timer=setTimeout(()=>field.controller?.abort(),6500);
+    show(local,'Đang tìm địa chỉ…');
+    try{
+      const bias=coords('pickup');const params=new URLSearchParams({q:query,lat:bias[0],lon:bias[1]});
+      const response=await fetch('/api/places/search?'+params,{signal:field.controller.signal,cache:'no-store'});
+      if(!response.ok)throw new Error(response.status===429?'busy':'offline');
+      const data=await response.json();
+      if(seq!==field.seq||input.value.trim()!==query)return;
+      const remote=(data.places||[]).filter(p=>typeof p.name==='string'&&Array.isArray(p.location)&&validPoint(p.location));
+      const seen=new Set();const options=[...remote,...local].filter(p=>{const key=p.location.map(n=>n.toFixed(4)).join(',');if(seen.has(key))return false;seen.add(key);return true;}).slice(0,10);
+      show(options,options.length?'Chọn đúng địa chỉ bên dưới':'Không tìm thấy. Thử thêm số nhà, quận hoặc thành phố.');
+      field.caption.textContent=options.length?'Chọn một kết quả để xác nhận vị trí.':'Bạn có thể chọn trên bản đồ hoặc nhập tọa độ.';
+    }catch(e){
+      if(seq!==field.seq||input.value.trim()!==query)return;
+      show(local,e.message==='busy'?'Tìm kiếm đang bận. Chờ một chút rồi thử lại.':'Chưa kết nối được tìm kiếm. Dùng địa điểm có sẵn hoặc tọa độ.');
+    }finally{clearTimeout(timer);}
+  };
+  input.addEventListener('focus',()=>show(catalog(field.selected?'':input.value),'Địa điểm gợi ý · Có thể gõ địa chỉ bất kỳ'));
+  input.addEventListener('input',()=>{
+    field.seq++;field.selected=false;clearTimeout(field.timer);field.controller?.abort();
+    input.setCustomValidity('Hãy chọn một kết quả địa chỉ để xác nhận vị trí.');
+    caption.textContent='Chọn kết quả gợi ý để xác nhận vị trí.';renderBookingButton();
+    const raw=input.value.trim();const coordinate=raw.match(/^(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)$/);
+    if(coordinate&&validPoint([+coordinate[1],+coordinate[2]])){
+      show([{name:raw,location:[+coordinate[1],+coordinate[2]],address:'Tọa độ bạn nhập',source:'coordinates'}],'Chọn để sử dụng tọa độ này');return;
+    }
+    show(catalog(raw),raw.length<3?'Nhập ít nhất 3 ký tự để tìm địa chỉ trực tuyến':'Đang chờ tìm kiếm…');
+    if(raw.length>=3)field.timer=setTimeout(search,900);
+  });
+  results.addEventListener('pointerdown',event=>{if(event.target.closest('button'))event.preventDefault();});
+  results.addEventListener('click',event=>{
+    const option=event.target.closest('[data-address-index]');
+    if(option){chooseAddress(kind,field.options[Number(option.dataset.addressIndex)]);input.focus();results.hidden=true;input.setAttribute('aria-expanded','false');}
+    if(event.target.closest('.address-search-more')){field.selected=false;clearTimeout(field.timer);search();}
+  });
+  input.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){results.hidden=true;input.setAttribute('aria-expanded','false');return;}
+    if(event.key==='Enter'){
+      event.preventDefault();
+      if(!results.hidden&&field.active>=0)chooseAddress(kind,field.options[field.active]);
+      else if(!field.selected){clearTimeout(field.timer);search();}
+      return;
+    }
+    if(['ArrowDown','ArrowUp'].includes(event.key)&&field.options.length){
+      event.preventDefault();field.active=(field.active+(event.key==='ArrowDown'?1:-1)+field.options.length)%field.options.length;
+      results.querySelectorAll('[role="option"]').forEach((el,i)=>el.setAttribute('aria-selected',String(i===field.active)));
+      input.setAttribute('aria-activedescendant',`${kind}-option-${field.active}`);
+      results.querySelector(`#${kind}-option-${field.active}`)?.scrollIntoView({block:'nearest'});
+    }
+  });
+  input.addEventListener('blur',()=>setTimeout(()=>{if(!container.contains(document.activeElement)){results.hidden=true;input.setAttribute('aria-expanded','false');}},180));
+  const p=places[kind==='pickup'?1:2];chooseAddress(kind,{name:p[0],location:[p[1],p[2]],address:'Địa điểm có sẵn · Vị trí tham khảo'});
+}
 function validPoint(point) { return point.every(Number.isFinite) && Math.abs(point[0]) <= 90 && Math.abs(point[1]) <= 180; }
 function distance(a,b) {
   const r = Math.PI / 180, dlat = (b[0]-a[0])*r, dlon = (b[1]-a[1])*r;
@@ -101,7 +238,22 @@ function distance(a,b) {
 function estimate() {
   const a=coords('pickup'),b=coords('destination'); if (!validPoint(a) || !validPoint(b)) return;
   const km=distance(a,b); $('#fare-label').textContent=money(12000+Math.round(km*8000));
-  $('#distance-label').textContent=km.toFixed(2)+' km · Khoảng cách mô phỏng'; renderMap();
+  $('#distance-label').textContent=km.toFixed(2)+' km · Ước tính'; renderMap();
+  refreshQuote();
+}
+let lastQuoteKey='',lastQuoteTime=0,quoteSeq=0;
+async function refreshQuote(){
+  const user=session();if(!user||user.role!=='passenger'||state.trips.some(t=>!terminal.has(t.state)))return;
+  const pickup=coords('pickup'),destination=coords('destination');
+  if(!validPoint(pickup)||!validPoint(destination)||Object.values(addressFields).some(f=>!f.selected))return;
+  const fingerprint=JSON.stringify([user.id,pickup,destination]);
+  if(fingerprint===lastQuoteKey&&Date.now()-lastQuoteTime<15000)return;
+  lastQuoteKey=fingerprint;lastQuoteTime=Date.now();const seq=++quoteSeq;
+  try{const quote=await api('pricing','/quote','POST',{pickup,destination},user);
+    if(seq!==quoteSeq||session()?.id!==user.id)return;
+    $('#fare-label').textContent=money(quote.fare);
+    $('#distance-label').textContent=quote.distance_km+' km · Hệ số giá ×'+quote.multiplier+(quote.degraded_dependencies.length?' · Giá cơ bản':'' );
+  }catch{/* Base estimate stays visible; booking itself requires a confirmed server-side quote. */}
 }
 function badge(status) { return `<span class="badge ${status==='completed'?'green':(['cancelled','payment_failed'].includes(status)?'red':'orange')}">${esc(labels[status] || status)}</span>`; }
 function empty(title,message,kind='route') { return `<div class="empty-state">${icon(kind)}<strong>${esc(title)}</strong>${esc(message)}</div>`; }
@@ -109,7 +261,7 @@ function currentTrip() {
   return state.trips.find(t => !terminal.has(t.state)) || state.trips.find(t => t.id === state.selected) || state.trips[0];
 }
 function renderAccount() {
-  const user=session(); $('#auth-panel').hidden=!!user&&!state.authOpen; $('#signed-in-bar').hidden=!user; $('#logout').hidden=!user;
+  const user=session(); $('#auth-panel').hidden=!state.authOpen; $('#signed-in-bar').hidden=!user; $('#logout').hidden=!user;$('#login-open').hidden=!!user;
   $('#account-pill').innerHTML=`<span class="avatar">${user ? esc(user.username.slice(0,1).toUpperCase()) : 'G'}</span><div><strong>${user ? esc(user.username) : 'Chào bạn!'}</strong><small>${user ? (state.role==='driver'?'Tài xế':'Hành khách') : 'Chưa đăng nhập'}</small></div>`;
   $('#role-switch').innerHTML=Object.entries(state.sessions).map(([role,u])=>`<button data-role="${esc(role)}" class="${state.role===role?'selected':''}">${icon(role==='driver'?'car':'user')}${role==='driver'?'Tài xế':'Hành khách'} · ${esc(u.username)}</button>`).join('') + '<button data-add-account="true">+ Thêm tài khoản</button>';
   $('#passenger-card').hidden=!!user && state.role==='driver'; $('#driver-card').hidden=!user || state.role!=='driver';
@@ -117,8 +269,9 @@ function renderAccount() {
 }
 function renderBookingButton() {
   const active=state.trips.some(t=>!terminal.has(t.state));
-  $('#book-button').disabled=state.busy || state.demo || (!!session() && (state.role!=='passenger' || active));
-  $('#book-button').querySelector('span:nth-child(2)').textContent=state.busy?'Đang gửi yêu cầu…':active?'Bạn đang có chuyến':'Đặt xe ngay';
+  const unresolved=Object.values(addressFields).some(f=>!f.selected);
+  $('#book-button').disabled=state.busy || state.demo || unresolved || (!!session() && (state.role!=='passenger' || active));
+  $('#book-button').querySelector('span:nth-child(2)').textContent=state.busy?'Đang gửi yêu cầu…':active?'Bạn đang có chuyến':unresolved?'Chọn địa chỉ trong gợi ý':'Đặt xe ngay';
   $('#demo-setup').disabled=state.busy || state.demo;
   $('#demo-run').disabled=state.busy || state.demo;
 }
@@ -126,17 +279,17 @@ function setView(view) {
   if (!['ride','history','payments','notifications','system'].includes(view)) view='ride';
   state.view=view; $$('.view').forEach(el=>{el.hidden=el.id!==`view-${view}`;});
   $$('.nav-item[data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
-  const titles={ride:['Đi đâu hôm nay?','Một chuyến đi thoải mái bắt đầu từ đây.','Chuyến đi'],history:['Những hành trình đã qua','Mỗi chuyến đi là một câu chuyện.','Lịch sử chuyến'],payments:['Thanh toán thật rõ ràng','Theo dõi giao dịch mô phỏng của bạn.','Thanh toán'],notifications:['Luôn kết nối với hành trình','Các cập nhật mới nhất dành cho bạn.','Thông báo'],system:['Mọi kết nối, trong tầm nhìn','Trạng thái hoạt động của các dịch vụ.','Hệ thống']};
+  const titles={ride:['Bạn muốn đi đâu?','Chọn điểm đón và điểm đến để đặt xe.','Đặt xe'],history:['Lịch sử chuyến đi','Xem lại những chuyến xe của bạn.','Lịch sử'],payments:['Thanh toán','Lịch sử giao dịch và số tiền đã thanh toán.','Thanh toán'],notifications:['Thông báo','Cập nhật về chuyến đi của bạn.','Thông báo'],system:['Trạng thái hệ thống','Kết nối đến các dịch vụ của ứng dụng.','Hệ thống']};
   let [title,subtitle,breadcrumb]=titles[view];
-  if (view==='ride' && session()?.role==='driver') {title='Sẵn sàng đón chuyến mới?';subtitle='Bật nhận chuyến và kết nối với hành khách gần bạn.';}
+  if (view==='ride' && session()?.role==='driver') {title='Nhận chuyến';subtitle='Bật nhận chuyến để bắt đầu làm việc.';}
   $('#page-title').textContent=title; $('#page-subtitle').textContent=subtitle; $('#breadcrumb-title').textContent=breadcrumb;
 }
 function renderTrip() {
   const trip=currentTrip();
   if (!session() || !trip) {
-    $('#journey-title').textContent=state.role==='driver'&&session()?'Chưa có yêu cầu mới':'Chuyến đi mới đang chờ bạn';
+    $('#journey-title').textContent=state.role==='driver'&&session()?'Chưa có yêu cầu mới':'Chuyến đi của bạn';
     $('#trip-badge').textContent='Chưa có chuyến';$('#trip-badge').className='badge';
-    $('#trip-detail').innerHTML=`<div class="empty-journey"><span class="empty-icon">${icon('route')}</span><p>${state.role==='driver'&&session()?'Bật nhận chuyến để hành khách tìm thấy bạn.<br>Yêu cầu mới sẽ xuất hiện tự động tại đây.':'Chọn điểm đón và điểm đến để bắt đầu.<br>Trạng thái chuyến sẽ cập nhật tự động tại đây.'}</p></div>`;return;
+    $('#trip-detail').innerHTML=`<div class="empty-journey"><span class="empty-icon">${icon('route')}</span><p>${state.role==='driver'&&session()?'Bật nhận chuyến để nhận yêu cầu mới.':'Sau khi đặt xe, bạn có thể theo dõi tài xế và chuyến đi tại đây.'}</p></div>`;return;
   }
   $('#journey-title').textContent=`Chuyến #${shortId(trip.id)}`;
   $('#trip-badge').outerHTML=badge(trip.state).replace('class="badge ','id="trip-badge" class="badge ');
@@ -151,7 +304,7 @@ function renderTrip() {
     if (trip.state==='accepted') actions='<button class="button primary" data-action="start">Đã đón khách · Bắt đầu</button>';
     if (trip.state==='in_progress') actions='<button class="button primary" data-action="complete">Hoàn thành chuyến</button>';
   }
-  $('#trip-detail').innerHTML=`<div class="trip-meta"><span>Giá cước <strong>${money(trip.fare)}</strong></span><span>Tài xế <strong>${shortId(trip.driver_id)}</strong></span><span>${date(trip.created)}</span></div><div class="timeline">${steps.map((s,i)=>`<div class="timeline-item ${index>=i?'done':''} ${index===i?'current':''}"><i>${index>i?'✓':''}</i>${stepNames[i]}</div>`).join('')}</div><p class="trip-message">${esc(messages[trip.state] || trip.state)}</p><div class="trip-actions">${actions}</div><p class="detail-code">Mã theo dõi: ${esc(trip.correlation_id)} · Phiên bản ${trip.version}</p>`;
+  $('#trip-detail').innerHTML=`<div class="trip-meta"><span>Giá cước <strong>${money(trip.fare)}</strong></span><span>Tài xế <strong>${shortId(trip.driver_id)}</strong></span><span>${date(trip.created)}</span></div><div class="timeline">${steps.map((s,i)=>`<div class="timeline-item ${index>=i?'done':''} ${index===i?'current':''}"><i>${index>i?'✓':''}</i>${stepNames[i]}</div>`).join('')}</div><p class="trip-message">${esc(messages[trip.state] || trip.state)}</p><div class="trip-actions">${actions}</div><details class="trip-technical"><summary>Chi tiết chuyến</summary><p class="detail-code">Mã theo dõi: ${esc(trip.correlation_id)} · Phiên bản ${trip.version}</p></details>`;
   $$('#trip-detail [data-action]').forEach(el=>el.disabled=state.busy||state.demo);
 }
 function renderDriver() {
@@ -165,18 +318,18 @@ function renderDriver() {
   $('#driver-online').disabled=state.busy||state.demo;
 }
 function renderHistory() {
-  $('#history-content').innerHTML=!session()?empty('Đăng nhập để xem lịch sử','Các chuyến đi của bạn sẽ được lưu tại đây.','clock'):!state.trips.length?empty('Chưa có chuyến đi','Chuyến đầu tiên của bạn đang ở phía trước.','clock'):`<div class="table-wrap"><table><thead><tr><th>CHUYẾN ĐI</th><th>THỜI GIAN</th><th>ĐIỂM ĐÓN → ĐIỂM ĐẾN</th><th>GIÁ CƯỚC</th><th>TRẠNG THÁI</th></tr></thead><tbody>${state.trips.map(t=>`<tr><td><button class="table-link" data-trip="${esc(t.id)}">#${shortId(t.id)} ↗</button></td><td>${date(t.created)}</td><td>${t.pickup.map(n=>n.toFixed(3)).join(', ')}<br>→ ${t.destination.map(n=>n.toFixed(3)).join(', ')}</td><td>${money(t.fare)}</td><td>${badge(t.state)}</td></tr>`).join('')}</tbody></table></div>`;
+  $('#history-content').innerHTML=!session()?empty('Đăng nhập để xem lịch sử','Các chuyến đi của bạn sẽ được lưu tại đây.','clock'):!state.trips.length?empty('Chưa có chuyến đi','Chuyến đầu tiên của bạn đang ở phía trước.','clock'):`<div class="table-wrap"><table><thead><tr><th>CHUYẾN ĐI</th><th>THỜI GIAN</th><th>ĐIỂM ĐÓN → ĐIỂM ĐẾN</th><th>GIÁ CƯỚC</th><th>TRẠNG THÁI</th></tr></thead><tbody>${state.trips.map(t=>`<tr><td><button class="table-link" data-trip="${esc(t.id)}">#${shortId(t.id)}</button></td><td>${date(t.created)}</td><td>${t.pickup.map(n=>n.toFixed(3)).join(', ')}<br>→ ${t.destination.map(n=>n.toFixed(3)).join(', ')}</td><td>${money(t.fare)}</td><td>${badge(t.state)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function renderPayments() {
   const paid=state.payments.filter(p=>p.state==='paid');
   $('#payment-summary').innerHTML=[['Tổng thanh toán thành công',money(paid.reduce((s,p)=>s+p.amount,0))],['Giao dịch thành công',String(paid.length)],['Giao dịch bị từ chối',String(state.payments.filter(p=>p.state==='declined').length)]].map(([label,value])=>`<div class="summary-card"><p>${label}</p><strong>${value}</strong></div>`).join('');
-  $('#payments-content').innerHTML=!session()?empty('Đăng nhập để xem giao dịch','Không có giao dịch tiền thật trong hệ thống này.','wallet'):!state.payments.length?empty('Chưa có thanh toán','Giao dịch xuất hiện khi một chuyến xe hoàn tất.','wallet'):`<div class="table-wrap"><table><thead><tr><th>CHUYẾN</th><th>THỜI GIAN</th><th>SỐ TIỀN</th><th>KẾT QUẢ</th></tr></thead><tbody>${state.payments.map(p=>`<tr><td><button class="table-link" data-trip="${esc(p.trip_id)}">#${shortId(p.trip_id)} ↗</button></td><td>${date(p.created)}</td><td>${money(p.amount)}</td><td><span class="badge ${p.state==='paid'?'green':'red'}">${p.state==='paid'?'Thành công':'Bị từ chối'}</span></td></tr>`).join('')}</tbody></table></div>`;
+  $('#payments-content').innerHTML=!session()?empty('Đăng nhập để xem giao dịch','Không có giao dịch tiền thật trong hệ thống này.','wallet'):!state.payments.length?empty('Chưa có thanh toán','Giao dịch xuất hiện khi một chuyến xe hoàn tất.','wallet'):`<div class="table-wrap"><table><thead><tr><th>CHUYẾN</th><th>THỜI GIAN</th><th>SỐ TIỀN</th><th>KẾT QUẢ</th></tr></thead><tbody>${state.payments.map(p=>`<tr><td><button class="table-link" data-trip="${esc(p.trip_id)}">#${shortId(p.trip_id)}</button></td><td>${date(p.created)}</td><td>${money(p.amount)}</td><td><span class="badge ${p.state==='paid'?'green':'red'}">${p.state==='paid'?'Thành công':'Bị từ chối'}</span></td></tr>`).join('')}</tbody></table></div>`;
 }
 function renderNotices() {
   $('#notice-count').textContent=state.notices.length;$('#bell-dot').hidden=!state.notices.length;
-  $('#notifications-content').innerHTML=!session()?empty('Đăng nhập để nhận thông báo','Cập nhật hành trình sẽ được gửi đến đúng tài khoản của bạn.','bell'):!state.notices.length?empty('Bạn đã cập nhật mọi thứ','Thông báo mới sẽ xuất hiện khi có hoạt động.','bell'):state.notices.map(n=>`<div class="notice-item"><span class="soft-icon">${icon(n.topic.startsWith('payment')?'wallet':'bell')}</span><div><strong>${esc(topicLabels[n.topic] || n.topic)}</strong><p>Chuyến #${shortId(n.trip_id)} <button class="table-link" data-trip="${esc(n.trip_id)}">Xem hành trình ↗</button></p></div><time>${date(n.timestamp)}</time></div>`).join('');
+  $('#notifications-content').innerHTML=!session()?empty('Đăng nhập để nhận thông báo','Cập nhật hành trình sẽ được gửi đến đúng tài khoản của bạn.','bell'):!state.notices.length?empty('Bạn đã cập nhật mọi thứ','Thông báo mới sẽ xuất hiện khi có hoạt động.','bell'):state.notices.map(n=>`<div class="notice-item"><span class="soft-icon">${icon(n.topic.startsWith('payment')?'wallet':'bell')}</span><div><strong>${esc(topicLabels[n.topic] || n.topic)}</strong><p>Chuyến #${shortId(n.trip_id)} <button class="table-link" data-trip="${esc(n.trip_id)}">Xem hành trình</button></p></div><time>${date(n.timestamp)}</time></div>`).join('');
 }
-function render() {renderAccount();renderTrip();renderDriver();renderHistory();renderPayments();renderNotices();renderMap();setView(state.view);}
+function render() {renderAccount();renderTrip();renderDriver();renderHistory();renderPayments();renderNotices();renderMap();setView(state.view);refreshQuote();}
 async function refresh(showErrors=false) {
   const user=session();if(!user){state.trips=[];state.payments=[];state.notices=[];state.driver=null;render();return;}
   const nonce=++state.nonce;
@@ -199,11 +352,12 @@ async function refreshStatus() {
     const response=await fetch('/api/status',{cache:'no-store',signal:AbortSignal.timeout(4500)});
     if(!response.ok)throw new Error('status');state.services=(await response.json()).services;
     const up=Object.values(state.services).filter(s=>s.status==='up').length;
-    $('#connection-label').textContent=`${up}/7 dịch vụ kết nối`;
-    $('#sidebar-health').classList.toggle('offline',up<7);
-    $('.live-label .status-dot').classList.toggle('offline',up<7);
+    const total=Object.keys(state.services).length;
+    $('#connection-label').textContent=`${up}/${total} dịch vụ kết nối`;
+    $('#sidebar-health').classList.toggle('offline',up<total);
+    $('.live-label .status-dot').classList.toggle('offline',up<total);
   }catch{$('#connection-label').textContent='Mất kết nối';$('#sidebar-health').classList.add('offline');}
-  const descriptions={identity:['Tài khoản','Đăng ký, đăng nhập và phân quyền'],driver:['Tài xế','Vị trí, trạng thái và giữ tài xế'],trip:['Chuyến đi','Đặt xe và vòng đời hành trình'],matching:['Ghép chuyến','Kết nối tài xế phù hợp'],payment:['Thanh toán','Xử lý giao dịch mô phỏng'],notification:['Thông báo','Cập nhật cho hai bên'],broker:['Hàng đợi','Chuyển sự kiện bất đồng bộ']};
+  const descriptions={identity:['Tài khoản','Đăng ký, đăng nhập và phân quyền'],driver:['Tài xế','Vị trí, trạng thái và giữ tài xế'],trip:['Chuyến đi','Đặt xe và vòng đời hành trình'],matching:['Ghép chuyến','Kết nối tài xế phù hợp'],payment:['Thanh toán','Xử lý giao dịch mô phỏng'],notification:['Thông báo','Cập nhật cho hai bên'],broker:['Hàng đợi','Chuyển sự kiện bất đồng bộ'],pricing:['Giá cước','Báo giá và giá theo nhu cầu'],observability:['Giám sát','Log tập trung và trace']};
   $('#service-grid').innerHTML=Object.entries(descriptions).map(([name,[title,description]])=>{const up=state.services[name]?.status==='up';return `<div class="service-card"><div class="service-title"><h3>${title}</h3><span class="badge ${up?'green':'red'}">${up?'Đang hoạt động':'Mất kết nối'}</span></div><p>${description}</p><small>${name}</small></div>`;}).join('');
 }
 async function perform(fn) {if(state.busy)return;state.busy=true;renderBookingButton();renderDriver();try{await fn();}catch(e){toast(e.message,true);}finally{state.busy=false;await refresh();}}
@@ -233,8 +387,8 @@ async function setupDemo() {
   state.sessions={passenger,driver};state.role='passenger';state.selected=null;state.authOpen=false;
   state.trips=[];state.payments=[];state.notices=[];state.driver=null;state.pendingBooking=null;
   const point=[10.7769+Math.random()*.006,106.7009+Math.random()*.006];
-  setCoords('pickup',point);setCoords('driver',point);$('#pickup-place').value=String(places.length-1);
-  setCoords('destination',[10.7900,106.7200]);$('#destination-place').value='2';
+  chooseAddress('pickup',{name:'Điểm đón demo',location:point,address:'Vị trí tài xế demo'});setCoords('driver',point);
+  chooseAddress('destination',{name:'Thảo Cầm Viên',location:[10.7900,106.7200],address:'TP. Hồ Chí Minh'});
   await api('driver','/drivers/me','POST',{location:coords('driver'),status:'available'},driver);
   state.lastHeartbeat=Date.now();persist();estimate();setView('ride');
 }
@@ -273,36 +427,37 @@ function renderMap() {
   const trip=current&&(state.role==='driver'||!terminal.has(current.state))?current:null;
   const pickup=trip?.pickup||coords('pickup'),destination=trip?.destination||coords('destination');
   if(!validPoint(pickup)||!validPoint(destination))return;
-  const driver=state.driver?.location || (state.sessions.driver && state.lastHeartbeat ? coords('driver'):null);
-  const points=[pickup,destination,...(driver&&validPoint(driver)?[driver]:[])];
-  const lat=points.map(p=>p[0]),lon=points.map(p=>p[1]);
-  let minLat=Math.min(...lat),maxLat=Math.max(...lat),minLon=Math.min(...lon),maxLon=Math.max(...lon);
-  const latSpan=Math.max(.024,maxLat-minLat)*1.8,lonSpan=Math.max(.035,maxLon-minLon)*1.7;
-  const midLat=(minLat+maxLat)/2,midLon=(minLon+maxLon)/2;
-  const xy=p=>[450+(p[1]-midLon)/lonSpan*900,275-(p[0]-midLat)/latSpan*550];
-  const [ax,ay]=xy(pickup),[bx,by]=xy(destination);
-  const roads=`<path d="M-20 126 950 126M-20 212 950 212M-20 380 950 380M-20 478 950 478M105-20v600M260-20v600M445-20v600M590-20v600M790-20v600M-80 510 560-30M220 620 950 20" fill="none" stroke="#fffdf7" stroke-width="16"/><path d="M-20 126 950 126M-20 380 950 380M260-20v600M590-20v600M-80 510 560-30" fill="none" stroke="#e6dcc4" stroke-width="2"/>`;
-  const marker=(x,y,kind,label)=>`<g transform="translate(${x} ${y})"><circle r="24" fill="${kind==='pickup'?'#6f9873':'#d89a73'}" opacity=".12"/><path d="M0 6C-20-8-13-25 0-25S20-8 0 6Z" fill="${kind==='pickup'?'#537f5a':'#d4946a'}" stroke="white" stroke-width="3"/><circle cy="-12" r="4" fill="white"/><rect x="-51" y="15" width="102" height="25" rx="6" fill="white" stroke="#e1e8d7"/><text y="32" text-anchor="middle" fill="#6f8561" font-size="10" font-family="Segoe UI,Arial">${label}</text></g>`;
-  $('#ride-map').innerHTML=`<defs><pattern id="blocks" width="155" height="84" patternUnits="userSpaceOnUse"><rect x="10" y="8" width="130" height="65" rx="8" fill="#e7ecdf"/><path d="M15 15h45v22H15zm54 0h60v22H69zM15 44h75v20H15zm84 0h30v20H99z" fill="#e1e8d6" opacity=".6"/></pattern><filter id="marker-shadow"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity=".1"/></filter></defs><rect width="900" height="550" fill="#eff1e6"/><rect width="900" height="550" fill="url(#blocks)"/><path d="M760-60c-75 120 62 190 12 280S690 340 780 440s-15 130 7 170" fill="none" stroke="#c5dcd3" stroke-width="60"/><path d="M745-60c-75 120 62 190 12 280S675 340 765 440s-15 130 7 170" fill="none" stroke="#e0e9d8" stroke-width="5"/><rect x="290" y="235" width="120" height="115" rx="14" fill="#d6e5c7"/><rect x="111" y="140" width="129" height="55" rx="8" fill="#dbe8cd"/>${roads}<g fill="#acb49b" font-family="Segoe UI,Arial" font-size="10" letter-spacing="1"><text x="320" y="290" text-anchor="middle">CÔNG VIÊN</text><text x="497" y="100">TRUNG TÂM</text><text x="390" y="455">KHU DÂN CƯ</text><text x="600" y="355">BẾN SÔNG</text><text x="130" y="207" font-size="8">ĐƯỜNG PHỐ MINH HỌA</text></g><path d="M${ax} ${ay}Q${(ax+bx)/2+40} ${ay} ${bx} ${by}" stroke="#b0c4a5" stroke-width="10" opacity=".4" fill="none"/><path class="route-line" d="M${ax} ${ay}Q${(ax+bx)/2+40} ${ay} ${bx} ${by}" stroke="#77986b" stroke-width="3" fill="none"/><g filter="url(#marker-shadow)">${marker(ax,ay,'pickup','Điểm đón của bạn')}${marker(bx,by,'destination','Điểm đến')}</g>${driver?(()=>{const [x,y]=xy(driver);return `<g transform="translate(${x-21} ${y+25})"><rect width="42" height="25" rx="8" fill="#fff" stroke="#9cb38a"/><path d="m9 12 3-5h15l4 5v8H9zm4-1h14M14 16h.1m12 0h.1" stroke="#77956a" fill="none" stroke-width="1.5"/></g>`;})():''}`;
+  const driver=state.driver?.location||(state.sessions.driver&&state.lastHeartbeat?coords('driver'):null);
+  window.GoRideMap.update({pickup,destination,driver:driver&&validPoint(driver)?driver:null});
 }
 
 // Forms and navigation are wired once; polling only updates data containers.
 hydrateIcons();
 for(const kind of ['pickup','destination']){
   const select=$(`#${kind}-place`);select.innerHTML=places.map(([name],i)=>`<option value="${i}">${name}</option>`).join('');select.value=kind==='pickup'?'1':'2';
-  select.addEventListener('change',()=>{const [,lat,lon]=places[Number(select.value)];if(lat!==null)setCoords(kind,[lat,lon]);estimate();});
-  for(const axis of ['lat','lon'])$(`#${kind}-${axis}`).addEventListener('input',()=>{select.value=String(places.length-1);estimate();});
+  select.addEventListener('change',()=>{const [name,lat,lon]=places[Number(select.value)];if(lat!==null)chooseAddress(kind,{name,location:[lat,lon],address:'Địa điểm có sẵn'});});
+  setupAddressSearch(kind);
+  for(const axis of ['lat','lon'])$(`#${kind}-${axis}`).addEventListener('input',()=>{
+    const point=coords(kind);if(validPoint(point))chooseAddress(kind,{name:'Vị trí tùy chọn',location:point,address:point.join(', ')});else{addressFields[kind].selected=false;renderBookingButton();}
+  });
 }
 document.addEventListener('click',async(event)=>{
   const target=event.target.closest('button,a');if(!target)return;
   if(target.dataset.view){setView(target.dataset.view);if(target.dataset.view==='system')refreshStatus();}
   if(target.dataset.role)await changeRole(target.dataset.role);
   if(target.dataset.addAccount&&!state.demo){state.authOpen=true;$('#auth-panel').hidden=false;$('#username').focus();}
-  if(target.dataset.auth){state.authMode=target.dataset.auth;$$('[data-auth]').forEach(el=>el.classList.toggle('selected',el===target));$('#register-role').hidden=state.authMode!=='register';$('#auth-submit').innerHTML=(state.authMode==='register'?'Tạo tài khoản':'Đăng nhập')+' <span>→</span>';$('#password').autocomplete=state.authMode==='register'?'new-password':'current-password';$('#auth-error').hidden=true;}
+  if(target.dataset.auth){state.authMode=target.dataset.auth;$$('[data-auth]').forEach(el=>el.classList.toggle('selected',el===target));$('#register-role').hidden=state.authMode!=='register';$('#auth-submit').textContent=state.authMode==='register'?'Tạo tài khoản':'Đăng nhập';$('#auth-title').textContent=state.authMode==='register'?'Tạo tài khoản GoRide':'Đăng nhập GoRide';$('#password').autocomplete=state.authMode==='register'?'new-password':'current-password';$('#auth-error').hidden=true;}
   if(target.dataset.action)await tripAction(target.dataset.action);
   if(target.dataset.trip){state.selected=target.dataset.trip;setView('ride');renderTrip();renderMap();}
   if(target.classList.contains('refresh-button'))await refresh(true);
-  if(target.dataset.mapTarget){state.mapTarget=target.dataset.mapTarget;$$('[data-map-target]').forEach(el=>el.classList.toggle('active',el===target));$('#map-instruction').textContent='Nhấn trên sơ đồ để chọn '+(state.mapTarget==='pickup'?'điểm đón':'điểm đến');}
+  if(target.dataset.mapTarget){
+    if(!window.GoRideMap.canSelect()){toast('Chuyến đang hoạt động. Bạn không thể đổi vị trí của chuyến này.',true);return;}
+    const kind=target.dataset.mapTarget;
+    if(!window.GoRideMap.setTarget(kind)){toast('Bản đồ chưa tải xong. Kiểm tra kết nối Internet và thử lại.',true);return;}
+    state.mapTarget=kind;$$('[data-map-target]').forEach(el=>el.classList.toggle('active',el===target));
+    $('#map-instruction').textContent='Bấm trên bản đồ để chọn '+(kind==='pickup'?'điểm đón':'điểm đến');
+    $('#ride-map').scrollIntoView({behavior:'smooth',block:'center'});
+  }
 });
 $('#auth-form').addEventListener('submit',async(event)=>{
   event.preventDefault();$('#auth-error').hidden=true;$('#auth-submit').disabled=true;
@@ -317,7 +472,7 @@ $('#toggle-password').addEventListener('click',()=>{const input=$('#password');i
 $('#logout').addEventListener('click',()=>{if(state.demo){toast('Đợi demo hoàn tất trước khi đăng xuất.',true);return;}delete state.sessions[state.role];state.nonce++;state.role=state.sessions.passenger?'passenger':'driver';state.trips=[];state.payments=[];state.notices=[];state.driver=null;state.selected=null;persist();render();refresh();});
 $('#booking-form').addEventListener('submit',async(event)=>{
   event.preventDefault();if(state.demo)return;
-  if(!session()){$('#auth-panel').hidden=false;$('#username').focus();toast('Đăng nhập tài khoản hành khách để đặt xe.');return;}
+  if(!session()){openAuth();toast('Đăng nhập tài khoản hành khách để đặt xe.');return;}
   if(state.role!=='passenger')return;
   await perform(async()=>{
     const data={pickup:coords('pickup'),destination:coords('destination'),payment_mode:$('#payment-mode').value};
@@ -332,24 +487,29 @@ $('#driver-form').addEventListener('submit',async(event)=>{event.preventDefault(
 $('#driver-offline').addEventListener('click',()=>perform(()=>updateDriver(true)));
 $('#driver-use-pickup').addEventListener('click',()=>{setCoords('driver',coords('pickup'));toast('Đã điền vị trí. Nhấn nút cập nhật để gửi.');});
 $('#demo-setup').addEventListener('click',async()=>{
+  $('.demo-menu').open=false;
   if(session()&&state.trips.some(t=>!terminal.has(t.state))){toast('Hãy kết thúc chuyến hiện tại trước khi tạo phiên demo mới.',true);return;}
   await perform(async()=>{await setupDemo();toast('Đã tạo hành khách và tài xế đang online. Bạn có thể đặt xe hoặc chuyển vai trò ở phía trên.');});
 });
-$('#demo-run').addEventListener('click',runDemo);
-$('#map-reset').addEventListener('click',renderMap);
-$('#ride-map').addEventListener('click',(event)=>{
-  if(!state.mapTarget){toast('Chọn “Chọn trên sơ đồ” ở ô điểm đón hoặc điểm đến trước.');return;}
-  if(session()&&currentTrip()&&!terminal.has(currentTrip().state)){toast('Chuyến đang hoạt động; tọa độ hành trình không thể thay đổi.',true);return;}
-  const a=coords('pickup'),b=coords('destination'),driver=state.driver?.location||(state.sessions.driver&&state.lastHeartbeat?coords('driver'):null);
-  const points=[a,b,...(driver?[driver]:[])],lat=points.map(p=>p[0]),lon=points.map(p=>p[1]);
-  const midLat=(Math.min(...lat)+Math.max(...lat))/2,midLon=(Math.min(...lon)+Math.max(...lon))/2;
-  const latSpan=Math.max(.024,Math.max(...lat)-Math.min(...lat))*1.8,lonSpan=Math.max(.035,Math.max(...lon)-Math.min(...lon))*1.7;
-  const svg=$('#ride-map'),matrix=svg.getScreenCTM();if(!matrix)return;
-  const point=new DOMPoint(event.clientX,event.clientY).matrixTransform(matrix.inverse());
-  const target=state.mapTarget;setCoords(target,[midLat-(point.y-275)/550*latSpan,midLon+(point.x-450)/900*lonSpan]);
-  $(`#${target}-place`).value=String(places.length-1);state.mapTarget=null;$$('[data-map-target]').forEach(el=>el.classList.remove('active'));
-  $('#map-instruction').textContent='Sơ đồ minh họa · Tọa độ mô phỏng';estimate();
+$('#demo-run').addEventListener('click',()=>{$('.demo-menu').open=false;runDemo();});
+function openAuth(){state.authOpen=true;$('#auth-panel').hidden=false;$('#username').focus();}
+function closeAuth(){state.authOpen=false;$('#auth-panel').hidden=true;$('#login-open').focus();}
+$('#login-open').addEventListener('click',openAuth);
+$('#auth-close').addEventListener('click',closeAuth);
+document.addEventListener('keydown',event=>{
+  if(!state.authOpen)return;
+  if(event.key==='Escape'){closeAuth();return;}
+  if(event.key==='Tab'){
+    const focusable=[...$('#auth-panel').querySelectorAll('button,input,select')].filter(el=>!el.disabled&&el.getClientRects().length);
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
 });
+$('#map-reset').addEventListener('click',()=>window.GoRideMap.update(window.GoRideMap.latest,true));
+window.GoRideMap.canSelect=()=>!state.demo&&!state.busy&&!(session()&&currentTrip()&&!terminal.has(currentTrip().state));
+window.GoRideMap.onSelect=(kind,place)=>{chooseAddress(kind,place);state.mapTarget=null;$$('[data-map-target]').forEach(el=>el.classList.remove('active'));};
+window.GoRideMap.init();
 estimate();render();refreshStatus();refresh();
 setInterval(async()=>{if(document.hidden||state.refreshing)return;state.refreshing=true;try{await refresh();}finally{state.refreshing=false;}},2000);
 setInterval(()=>{if(!document.hidden)refreshStatus();},10000);

@@ -1,0 +1,8 @@
+# Matching is a competing-consumer worker, so it needs no published host port.
+# Compose v2.24.4+ supports !reset and !override. Each replica gets its own /data volume.
+services:
+  matching:
+    ports: !reset []
+    volumes: !override [/data]
+    deploy:
+      replicas: 3

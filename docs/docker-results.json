@@ -1,45 +1,45 @@
 {
-  "project": "ds03-validation",
+  "project": "ds03-final-validation",
   "tests": [
     {
       "test": "test_F03_complete_ride_and_payment",
       "status": "passed",
-      "seconds": 0.978
+      "seconds": 1.224
     },
     {
       "test": "test_C01_two_passengers_one_driver",
       "status": "passed",
-      "seconds": 0.635
+      "seconds": 0.783
     },
     {
       "test": "test_R01_payment_crash_and_queue_recovery",
       "status": "passed",
-      "seconds": 1.981
+      "seconds": 4.175
     },
     {
       "test": "test_R02_broker_crash_outbox_and_durable_restart",
       "status": "passed",
-      "seconds": 5.859
+      "seconds": 5.627
     },
     {
       "test": "test_F09_declined_payment_compensates",
       "status": "passed",
-      "seconds": 0.812
+      "seconds": 1.198
     },
     {
       "test": "test_S01_authentication_and_resource_authorization",
       "status": "passed",
-      "seconds": 0.606
+      "seconds": 0.642
     },
     {
       "test": "test_S02_invalid_inputs_and_password",
       "status": "passed",
-      "seconds": 0.119
+      "seconds": 0.18
     },
     {
       "test": "test_F11_duplicate_event_published_once",
       "status": "passed",
-      "seconds": 0.215
+      "seconds": 0.329
     }
   ],
   "scope": "8 selected HTTP scenarios on Compose; not the complete 24-test local suite"

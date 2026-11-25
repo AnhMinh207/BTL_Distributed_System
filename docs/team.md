@@ -5,7 +5,7 @@
 - Lớp: [điền]
 - Giảng viên: [điền]
 - Tên nhóm: [điền]
-- Repository GitHub: [điền]
+- Repository GitHub: https://github.com/AnhMinh207/BTL_Distributed_System
 
 Nhóm không quá 3 thành viên. Bảng dưới là phân công đề xuất, chưa phải bằng chứng đã đóng góp.
 

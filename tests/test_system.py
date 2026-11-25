@@ -23,6 +23,7 @@ class SystemTests(unittest.TestCase):
         cls.run_dir = ROOT / 'runtime' / ('test-' + uid())
         cls.env = os.environ.copy()
         cls.env.update(AUTH_SECRET=secrets.token_hex(32), SERVICE_KEY=secrets.token_hex(32),
+                       OPERATIONS_KEY=secrets.token_hex(32), MATCHING_REPLICA_DATA='1',
                        DATA_DIR=str(cls.run_dir / 'data'), HOST='127.0.0.1', MAX_ATTEMPTS='3',
                        LEASE_SECONDS='2', SAGA_TIMEOUT='300', OFFER_TIMEOUT='300', PYTHONUNBUFFERED='1')
         cls.urls = {}
@@ -262,6 +263,8 @@ class SystemTests(unittest.TestCase):
                              lambda rows: any(r['queue'] == 'matching' for r in rows), seconds=25)
             delivery = next(r for r in dead if r['queue'] == 'matching')
             self.assertEqual(3, delivery['attempts'])
+            metrics=self.api('matching','/internal/metrics',internal=True)
+            self.assertTrue(any(c['failures']>=3 for c in metrics['circuits']))
         finally:
             self.cluster.start('driver')
         self.api('broker', '/queues/matching/redrive', 'POST', {'event_id': delivery['event_id']}, internal=True)

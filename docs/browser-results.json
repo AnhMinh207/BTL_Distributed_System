@@ -1,7 +1,7 @@
 {
   "passed": 14,
   "checks": [
-    "Guest auth and booking screen renders",
+    "Guest sees booking and map area immediately, without login overlay",
     "Demo registers two real accounts and makes driver available",
     "Passenger booking reaches offered through real matching",
     "Driver accepts, starts and completes; payment settles",
@@ -17,6 +17,8 @@
     "No uncaught browser JavaScript errors"
   ],
   "errors": [],
+  "map_provider": "OpenStreetMap / Leaflet",
+  "map_note": "Dedicated real tile and pointer tests are recorded in docs/osm-map-results.json.",
   "browser": "Installed Microsoft Edge; Playwright",
   "viewport": "1440x1100 and 390x844"
 }
