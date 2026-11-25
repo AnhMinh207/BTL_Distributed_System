@@ -6,6 +6,22 @@ Triển khai theo mục 4, 7, 9–13 của **COURSE PROJECT SPECIFICATION.pdf**.
 
 Đây là prototype phục vụ học phần, có **giao diện web tiếng Việt cho hành khách và tài xế**, kèm CLI. Thanh toán được mô phỏng. Bản đồ dùng **OpenStreetMap thật + Leaflet**, không cần API key hay liên kết thẻ; tọa độ driver demo vẫn được mô phỏng. Message broker tự triển khai để có thể kiểm chứng trực tiếp enqueue, lease, ACK, retry và DLQ; không cần cài RabbitMQ hoặc thư viện Python bên ngoài.
 
+## Phân công công việc cho 3 thành viên
+
+Điền họ tên và MSSV thực tế vào bảng dưới. Bảng xác định phần việc phụ trách; kết quả hoàn thành và minh chứng cập nhật theo công việc thực tế của từng thành viên. Thông tin lớp, giảng viên và nhóm lưu tại [docs/team.md](docs/team.md).
+
+| Thành viên | Nhiệm vụ phụ trách | Mã nguồn chính | Kiểm thử và phần demo phụ trách |
+|---|---|---|---|
+| **Thành viên 1** — Nguyễn Khắc Anh Minh / B23DCCE065 | **Tài khoản, tài xế và giao diện:** đăng ký/đăng nhập, phân quyền passenger/driver và kiểm tra quyền truy cập; cập nhật trạng thái/vị trí tài xế; chọn và giữ tài xế nguyên tử, chống gán trùng; giao diện khách/tài xế, OpenStreetMap và tìm địa điểm; tích hợp API Gateway cho thao tác người dùng. | `src/identity.py`, `src/driver.py`, `src/web/app.js`, `src/web/index.html`, `src/web/styles.css`, `src/web/places.css`, `src/web/osm-map.js`, `scripts/web.py`, `scripts/geocoding.py` | Kiểm thử tài khoản, quyền truy cập, vị trí và giao diện trong `tests/test_system.py`, `tests/test_web.py`, `tests/test_geocoding.py`; phối hợp TV2 kiểm tra giữ tài xế đồng thời. Demo đăng ký → tài xế online → chọn điểm đón/đến. Viết hướng dẫn giao diện trong `docs/web.md`. |
+| **Thành viên 2** — Trịnh Gia Huy / B23DCCE047 | **Đặt chuyến, ghép xe và tính giá:** tạo chuyến với idempotency key; quản lý vòng đời bằng state/version; Matching gọi Driver qua REST để giữ tài xế; Pricing tính khoảng cách, giá cơ bản và giá động; Saga hủy/từ chối/timeout và phối hợp giải phóng tài xế, xử lý kết quả đến muộn. | `src/trip.py`, `src/matching.py`, `src/pricing.py` | Kiểm thử vòng đời, request trùng, xung đột version, hai khách tranh một tài xế, timeout và giá động trong `tests/test_system.py`, `tests/test_advanced.py`. Demo đặt → ghép → nhận → bắt đầu → hoàn thành và kịch bản tranh chấp. Cập nhật luồng nghiệp vụ trong `docs/architecture.md`, `docs/requirements-matrix.md`. |
+| **Thành viên 3** — Nguyễn Thế Khải / B23DCAT144 | **Hàng đợi, thanh toán và vận hành:** Broker lưu bền, fan-out, lease/ACK, retry, dedup, DLQ/redrive; Payment mô phỏng và chống thanh toán trùng; Notification lưu thông báo; circuit breaker, log tập trung, tracing và dashboard vận hành; Docker Compose và scale Matching. | `src/broker.py`, `src/payment.py`, `src/notification.py`, `src/resilience.py`, `src/telemetry.py`, `src/observability.py`, `src/web/operations.js`, `deploy/compose.yaml`, `deploy/scale.yaml` | Kiểm thử lỗi và khôi phục, payment decline, thông báo, tracing và scaling; phụ trách `scripts/demo.py`, `scripts/advanced_demo.py`, `scripts/docker_smoke.py`. Demo tắt/khởi động lại service, queue chờ, retry/DLQ/redrive và xem trace. Cập nhật `docs/advanced.md`, `docs/demo.md` và kết quả thực nghiệm. |
+
+**Công việc chung của cả nhóm:**
+
+- Thống nhất API, schema sự kiện và correlation ID trước khi tích hợp. Với `src/common.py`, TV1 phụ trách phần xác thực/validation, TV2 phần transaction và tạo sự kiện outbox, TV3 phần publish/consume và inbox; cả nhóm review các thay đổi dùng chung.
+- Tích hợp và kiểm thử toàn bộ luồng bằng `python scripts/test.py`, `python tests/test_advanced.py`, `python tests/test_web.py`; đối chiếu yêu cầu tại `docs/ds03-audit.md`. TV1 kiểm tra giao diện, TV2 kiểm tra trạng thái/nghiệp vụ, TV3 tổng hợp log và bằng chứng chạy thực tế.
+- Viết báo cáo và slide theo phần việc phụ trách; cùng rà soát tài liệu, chuẩn bị demo và vấn đáp. Mỗi người cần hiểu kiến trúc tổng thể, REST/MQ, outbox/inbox, idempotency và Saga; ghi nhận đóng góp bằng commit/PR thực tế.
+
 ## Mở ứng dụng web — bắt đầu tại đây
 
 Chạy một lệnh trong terminal tại thư mục dự án:
